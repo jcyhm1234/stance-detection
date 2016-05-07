@@ -12,6 +12,8 @@ class DataPreprocess:
 		self.testTweets = []
 		self.trainLabels = []
 		self.testLabels = []
+		self.loadData()
+		self.dataPreprocess()
 
 	def loadData(self):
 		with open(self.trainFile, 'r') as f:

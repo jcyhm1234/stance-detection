@@ -3,20 +3,22 @@ from dataPreprocess import DataPreprocess
 
 
 class FeatureExtract:
-	def __init__(self, trainData):
-		self.trainData = trainData
+	def __init__(self, data):
+		self.data = data
+		self.counts = []
+		self.count_vect = CountVectorizer(decode_error='ignore')
 
-	def vectorize(self):
+	def vectorizeFitTransform(self):
 		#TODO: Resolve decoding error ?
-		count_vect = CountVectorizer(decode_error='ignore')
-		trainCounts = count_vect.fit_transform(self.trainData)
-		print 'Train count shape:'
-		print trainCounts.shape
-		print trainCounts[0]
+		self.counts = self.count_vect.fit_transform(self.data)
+		# print 'Train count shape:'
+		# print trainCounts.shape
+		# print trainCounts[0]
+
+	def vectorizeTransform(self, testData):
+		return self.count_vect.transform(testData)
 
 if __name__ == '__main__':
 	dp = DataPreprocess('../data/train.csv','../data/test.csv')
-	dp.loadData()
-	dp.dataPreprocess()
 	fe = FeatureExtract(dp.trainTweets)
 	fe.vectorize()
