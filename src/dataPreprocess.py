@@ -1,11 +1,10 @@
 import json
 import csv
-
-# split hashtg
-# handle punctuation
-# remove numbers
-# remove username
-# semST
+import re
+# check split hashtg
+# TODO: handle punctuation
+# TODO: remove numbers
+# TODO: contractions
 
 class DataPreprocess:
 	
@@ -33,14 +32,39 @@ class DataPreprocess:
 		print('Loaded %s testing samples', len(self.testData))
 
 	def dataPreprocess(self):
-		self.trainTweets = [row[0] for row in self.trainData]
-		self.testTweets = [row[0] for row in self.testData]
+		self.trainTweets = [tweetPreprocess(row[0]) for row in self.trainData]
+		self.testTweets = [tweetPreprocess(row[0]) for row in self.testData]
 		self.trainLabels = [row[2] for row in self.trainData]
 		self.testLabels = [row[2] for row in self.testData]
+	
+def tweetPreprocess(tw):
+	#processHashtag
+	tw = expandHashtag(tw)
+	#lowercase
+	tw = tw.lower()		
+	#Convert @username to AT_USER
+	tw = re.sub('@[^\s]+','AT_USER',tw)
+	#Remove additional white spaces
+	tw = re.sub('[\s]+', ' ', tw)
+	#remove punctuations
+	return tw
+	
+def expandHashtag(tw):
+	rv = []
+	for w in tw.split():
+		if w[0]=='#':
+			if w!='#SemST':
+				#changes #MakeAmericaGreatAgain to #Make #America #Great #Again
+				rv+=['#'+x for x in re.findall('[A-Z][^A-Z]*', w)]
+				#changes #MakeAmericaGreatAgain to Make America Great Again
+				# rv+=re.findall('[A-Z][^A-Z]*', w)
+				#changes #MakeAmericaGreatAgain to Make America Great Again
+				# rv+=re.findall('[A-Z][^A-Z]*', w)
+		else:
+			rv.append(w)
 
-	def toLowerCase(self):
-		self.trainTweets = [x.lower() for x in self.trainTweets]
-		self.testTweets = [x.lower() for x in self.testTweets]
+	return ' '.join(rv)
+
 
 if __name__ == '__main__':
 	dp = DataPreprocess('../data/train.csv','../data/test.csv')

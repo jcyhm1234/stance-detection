@@ -4,6 +4,12 @@ class Lexicon:
 		self.lex = {}
 		self.load()
 
+	def getFeatures(self, data):
+		rval = []
+		for d in data:
+			rval.append(self.getTweetFeatures(d))
+		return rval
+
 class SubjLexicon(Lexicon):
 	def load(self):
 		with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
@@ -19,7 +25,7 @@ class SubjLexicon(Lexicon):
 					else:
 						self.lex[word][key] = val
 
-	def getFeatures(self, words):
+	def getTweetFeatures(self, words):
 		#call before converting word to number
 		subj = []
 		pola = []
@@ -57,7 +63,7 @@ class LiuLexicon(Lexicon):
 				if lin and lin[0]!=';':
 					self.lex[lin] = 1
 
-	def getFeatures(self, words):
+	def getTweetFeatures(self, words):
 		#call before converting word to number
 		sent = []
 		for w in words:
@@ -69,4 +75,4 @@ class LiuLexicon(Lexicon):
 
 if __name__ == '__main__':
 	s = LiuLexicon()
-	print s.getFeatures(['He','is','hack'])
+	print s.getFeatures([['He','is','hack'],['Make','america','great','again']])
