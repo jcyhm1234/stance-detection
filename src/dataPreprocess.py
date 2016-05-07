@@ -1,6 +1,12 @@
 import json
 import csv
 
+# split hashtg
+# handle punctuation
+# remove numbers
+# remove username
+# semST
+
 class DataPreprocess:
 	
 	def __init__(self, trainFile, testFile):
@@ -31,6 +37,10 @@ class DataPreprocess:
 		self.testTweets = [row[0] for row in self.testData]
 		self.trainLabels = [row[2] for row in self.trainData]
 		self.testLabels = [row[2] for row in self.testData]
+
+	def toLowerCase(self):
+		self.trainTweets = [x.lower() for x in self.trainTweets]
+		self.testTweets = [x.lower() for x in self.testTweets]
 
 if __name__ == '__main__':
 	dp = DataPreprocess('../data/train.csv','../data/test.csv')

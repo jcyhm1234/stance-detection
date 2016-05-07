@@ -1,0 +1,50 @@
+https://github.com/idio/wiki2vec
+Wiki word2vec
+English Wikipedia (Feb 2015) 1000 dimension - No stemming - 10skipgram 
+	from gensim.models import Word2Vec
+	model = Word2Vec.load("path/to/word2vec/en.model")
+	model.similarity('woman', 'man')
+------------
+http://treo.deri.ie/easyesa/
+Explicit semantic analyis
+1. Extract easy_esa.tar.gz into INSTALL_DIR/.
+2. Extract data*.tar.gz into INSTALL_DIR/mongodb/data.
+3. Extract index*.tar.gz into INSTALL_DIR/index.
+4. Start mongodb: mongod --dbpath mongodb/data/db
+5. Start the EasyESA service: java -jar easy_esa.jar 8890 INSTALL_DIR/index &
+
+On Linux, you can execute the run.sh script for steps 4 and 5:
+  $./run.sh <destination dir>
+
+http://localhost:8890/esaservice
+The service parameters are:
+
+task
+The query function to be called. The choices and their parameters are:
+esa: semantic relatedness measure.
+term1, term2 (the two words to measure)
+vector: concept vector.
+source: the word for which the concept vector will be returned.
+limit: maximum size of the concept vector. The concept vector will be truncated if larger than the limit.
+explain: concept vector overlapping and context windows.
+term1, term2 (the two words to compare)
+limit: maximum size of the concept vector. the overlapping is calculated after any truncation.
+
+6.1. Examples
+
+6.1.1. Semantic relatedness measure query
+
+  http://vmdeb20.deri.ie:8890/esaservice?task=esa&term1=computing&term2=sensor
+Query for the semantic relatedness measure between the words computing and sensor.
+
+6.1.2. Concept vector query
+
+  http://vmdeb20.deri.ie:8890/esaservice?task=vector&source=coffee&limit=50
+Query for the concept vector of the word coffee with maximum length of 50 concepts.
+
+6.1.3. Explain query
+
+  http://vmdeb20.deri.ie:8890/esaservice?task=explain&term1=computing&term2=sensor&limit=10000
+Query for the concept vector overlapping between the words computing and sensor, and the context windows of both words for each concept in the overlap.
+
+---------------
