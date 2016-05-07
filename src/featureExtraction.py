@@ -1,6 +1,7 @@
 from sklearn.feature_extraction.text import CountVectorizer
 from dataPreprocess import DataPreprocess
 from lexicon import SubjLexicon, LiuLexicon
+from CMUTweetTagger import runtagger_parse
 
 class FeatureExtract:
 	def __init__(self, data):
@@ -23,11 +24,16 @@ class FeatureExtract:
 		l = LiuLexicon()
 		s = SubjLexicon()
 		#TODO: reshape to match the vector created above. right now its only for words in tweet
-		self.liu = l.getFeatures(data)
-		self.subj = s.getFeatures(data)
+		self.liu = l.getFeatures(self.data)
+		self.subj = s.getFeatures(self.data)
 
+	def getPOSTags(self):
+		pos = runtagger_parse(self.data)
+		#[[(tuple-word,tag,confidence),('word','V',0.99)][]]
+		#change structure appropriateyl
 
 if __name__ == '__main__':
 	dp = DataPreprocess('../data/train.csv','../data/test.csv')
 	fe = FeatureExtract(dp.trainTweets)
 	fe.vectorizeFitTransform()
+	fe.getPOSTags()

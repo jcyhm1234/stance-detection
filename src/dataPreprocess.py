@@ -38,6 +38,8 @@ class DataPreprocess:
 		self.testLabels = [row[2] for row in self.testData]
 	
 def tweetPreprocess(tw):
+	#remove nonascii
+	tw = ''.join(i for i in tw if ord(i)<128)
 	#processHashtag
 	tw = expandHashtag(tw)
 	#lowercase
