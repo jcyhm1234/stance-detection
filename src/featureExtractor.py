@@ -2,7 +2,7 @@ from dataManager import DataManager
 from lexicons import SubjLexicon, LiuLexicon
 from CMUTweetTagger import runtagger_parse
 from nltk.classify.util import apply_features
-
+from word2vec import Word2Vec
 class FeatureExtractor:
 	def __init__(self, data):
 		self.data = data
@@ -10,6 +10,7 @@ class FeatureExtractor:
 
 		self.liu = LiuLexicon()
 		self.subj = SubjLexicon()
+		self.word_vec_model = Word2Vec()
 		self.buildTweetCorpus()
 
 		self.temp = 0
@@ -41,6 +42,9 @@ class FeatureExtractor:
 			return self.liu.getWordFeatures(word)
 		else:
 			return 0
+
+	def getWord2Vec(self, tweetwords):
+		return self.word_vec_model.getFeatureVectors(tweetwords)
 
 	# def getPOSTags(self, tweets):
 	# 	tagtuples = runtagger_parse(tweets)
@@ -77,6 +81,8 @@ class FeatureExtractor:
 				features['pol({})'.format(word)] = (self.getPolarity(word, tweet_words))
 				features['senti({})'.format(word)] = (self.getLiuSentiment(word, tweet_words))
 			# features['pos({})'.format(word)] = (self.getPosTagWord(word, tweet_words, pos_tags))
+		# Add the word2vec representation for the entire tweet
+		features['vector'] = (self.getWord2Vec(tweet_words))
 		return features
 
 	def getFeatures(self, mode, for_baseline=False, labeled=True, withtopic=True):
