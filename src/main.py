@@ -89,9 +89,8 @@ class StanceDetector:
 		
 		for i in range(0, len(stance_pred)):
 			if boost_factors[i] == 2:
-				stance_pred[i] = self.fe.labelenc.transform(["NONE"])[0]
+				stance_pred[i] = self.fe.labelenc.transform("NONE")
 		
-		#calculate accuracy
 		pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
 		print [(self.data.testLabels[i], pred_labels[i] for i in range(len(stance_pred))]
 		score = accuracy_score(y_true_stance, stance_pred)
