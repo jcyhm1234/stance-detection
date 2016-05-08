@@ -32,7 +32,7 @@ class StanceDetector:
 			y_pred = clf.predict(X_test)
 			print '\t',mode, accuracy_score(y_true, y_pred)
 
-	def build(self, model):
+	def buildSimple(self, model):
 		print 'Training NB '
 		feats = ['words','lexiconsbyword','topic']
 		y_attribute = 'stance'
@@ -52,47 +52,47 @@ class StanceDetector:
 			y_pred = clf.predict(X_test)
 			print '\t',mode, accuracy_score(y_true, y_pred)
 
-	def buildSeparate(self):
-		#builds two separate for topic and stance
-		#WIP
-		
-		feats = ['words','lexiconsbyword']
-		y_attribute = 'topic'
+	def buildSVC(self, feats, y_attribute, proba=False):
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		
+		clf = SVC(probability=proba)
+		clf = clf.fit(X,y)
+		if prob:
+			y_proba = clf.predict_proba(X_test)
+			return clf, y_proba
+		else:
+			y = clf.predict(X_test)
+			return clf, y
+		
 
-		topic_clf = SVC(probability=True)
-		topic_clf = topic_clf.fit(X,y)
+	def buildSeparate(self):
+		#builds two separate for topic and stance
+		topic_clf, y_topic_proba = self.buildSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',proba=True)
+		
+		boost_factors = np.ones_like(y_true)
+		#multiply by NONE (0) = 0
+		#multiply by FAVOR (1) = 1
+		#multiply by AGAINST (2) = 2
 
-		y_topic_proba_pred = topic_clf.predict_proba(X)
-
-		# Get probablility dist over all labels
-		# dist = topic_clf.prob_classify_many(test_features)
-		boost_factors = []
-		for d in dist:
-			# Get the label which has max probablity
-			prob = d.prob(d.max())
-			boost = 1
+		#has index of class with max prob for each sample
+		topic_preds = np.argmax(y_topic_proba,axis=1)
+		for ind,s in enumerate(y_topic_proba):
+			prob = y_topic_proba[ind][topic_preds[ind]]
 			if prob < 0.4:
-				boost = 2
-			boost_factors.append(boost)
-		print 'boost factor length '
-		print len(boost_factors)
+				boost_factors[ind] = 0 #corresponds to NONE
 		
-		stance_clf = SVC()
-		feats = ['words','lexiconsbyword','topic']
-		y_attribute = 'stance'
-		X_stance,y_stance = self.fe.getFeaturesMatrix('train',feats,y_attribute)
-		X_test_stance,y_true_stance = self.fe.getFeaturesMatrix('test',feats,y_attribute)
-		stance_clf = stance_clf.fit(X_stance,y_stance)
-		stance_pred = stance_clf.predict(X_test_stance)
+		stance_clf,stance_pred = self.buildSVC(feats = ['words','lexiconsbyword','topic'],y_attribute = 'stance')		
 		
-		for i in range(0, len(stance_pred)):
-			if boost_factors[i] == 2:
-				stance_pred[i] = self.fe.labelenc.transform("NONE")
+		# for i in range(0, len(stance_pred)):
+		# 	if boost_factors[i] == 2:
+		# 		stance_pred[i] = self.fe.labelenc.transform("NONE")
 		
-		pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
-		print [(self.data.testLabels[i], pred_labels[i] for i in range(len(stance_pred))]
+		#with numpy arrays now, above is equivalent to below , right?
+		stance_pred = np.multiply(stance_pred, boost_factors)
+		stance_pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
+
+		print [(self.data.testLabels[i], pred_labels[i]) for i in range(len(stance_pred))]
 		score = accuracy_score(y_true_stance, stance_pred)
 		print score
 

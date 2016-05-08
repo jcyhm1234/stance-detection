@@ -33,7 +33,7 @@ class FeatureExtractor:
 		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Donald Trump", "Hillary Clinton", "Legalization of Abortion"])
 
 		self.labelenc = preprocessing.LabelEncoder()
-		self.labelenc.fit(["FAVOR","AGAINST","NONE"])
+		self.labelenc.fit(["NONE","FAVOR","AGAINST"])
 		
 		i = 0
 		# j = 0
