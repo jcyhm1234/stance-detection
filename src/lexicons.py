@@ -58,7 +58,10 @@ class SubjLexicon(Lexicon):
 			else:
 				pola = 0
 		elif w[0]=='#':
-			pola = self.getWordPolarity(w[1:])
+			if w[1:]:
+				pola = self.getWordPolarity(w[1:])
+			else:
+				pola = 0
 		else:
 			pola = 0
 		return pola
@@ -70,7 +73,10 @@ class SubjLexicon(Lexicon):
 			else:
 				subj = 0.5
 		elif w[0]=='#':
-			subj = self.getWordSubjectivity(w[1:])
+			if w[1:]:
+				subj = self.getWordSubjectivity(w[1:])
+			else:
+				subj = 0
 		else:
 			subj = 0
 		return subj
@@ -102,12 +108,13 @@ class LiuLexicon(Lexicon):
 		return sent
 
 	def getWordFeatures(self, w):
+		f = 0
 		if w in self.lex:
-			return self.lex[w]
+			f = self.lex[w]
 		elif w[0]=='#':
-			return self.getWordFeatures(w[1:])
-		else:
-			return 0
+			if w[1:]:
+				f = self.getWordFeatures(w[1:])
+		return f
 
 if __name__ == '__main__':
 	s = LiuLexicon()

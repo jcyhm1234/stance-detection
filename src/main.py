@@ -56,10 +56,13 @@ class StanceDetector:
 		print accuracy(clf, self.featext.getFeatures('test',False))
 		print clf.show_most_informative_features(30)
 
+	def buildTwo(self):
+		#builds two separate for topic and stance
+		pass
 
 if __name__=='__main__':
-	sd = StanceDetector()
-	sd.buildBaselineSVM()
+	# sd = StanceDetector()
+	# sd.buildBaselineSVM()
 
 	sd2 = StanceDetector()
 	sd2.buildSVM()

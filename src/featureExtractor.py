@@ -77,6 +77,7 @@ class FeatureExtractor:
 			# features['pos({})'.format(word)] = (self.getPosTagWord(word, tweet_words, pos_tags))
 		return features
 
+
 	def getFeatures(self, mode, for_baseline, labeled=True):
 		"""
 		labeled = True : returns[ (sample_features_dict, y_value),(.),..]
