@@ -1,77 +1,80 @@
 from dataManager import DataManager
 from featureExtractor import FeatureExtractor
-from nltk.classify import NaiveBayesClassifier as nbclf
-from nltk.classify import accuracy
-from nltk import classify
 from nltk.classify.scikitlearn import SklearnClassifier
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score
 
 class StanceDetector:
 	def __init__(self):
 		self.data = DataManager('../data/train.csv','../data/test.csv')
-		self.featext = FeatureExtractor(self.data)
+		self.fe = FeatureExtractor(self.data)
 
-	def buildBaselineNB(self):
-		X = self.featext.getFeatures('train',True)
-		print 'Training baseline...'
-		clf = nbclf.train(X)
-		print 'Training done'
-		print 'Testing...'
-		# print clf.classify(self.featext.getTweetFeatures(self.data.testTweets[0][0])), self.data.testTweets[0][1]
-		print accuracy(clf, self.featext.getFeatures('test',True))
-		print clf.show_most_informative_features(30)
-		self.clf_base_nb = clf
+	def buildBaseline(self, model):
+		print 'Training baseline',model
+		feats = ['words']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		for mode in ['simple','tfidf']:
+			if model=='bayes':
+				cl = MultinomialNB()
+			elif model=='svm':
+				cl = LinearSVC()
 
-	def buildBaselineSVM(self):
-		X = self.featext.getFeatures('train',True)
-		print 'Training baseline...'
-		clf = SklearnClassifier(SVC())
-		clf = clf.train(X)
-		print 'Training done'
-		print 'Testing...'
-		print accuracy(clf, self.featext.getFeatures('test',True))
-		# self.clf_base_svm = clf
+			if mode=='tfidf':
+				X = TfidfTransformer().fit_transform(X).toarray()
+				X_test = TfidfTransformer().fit_transform(X_test).toarray()
+			
+			clf = cl.fit(X, y)
+			y_pred = clf.predict(X_test)
+			print '\t',mode, accuracy_score(y_true, y_pred)
 
-	def buildSVM(self):
-		X = self.featext.getFeatures('train')
-		clf = SklearnClassifier(SVC())
-		clf = clf.train(X)
-		print 'Training done'
-		print 'Testing...'
-		print accuracy(clf, self.featext.getFeatures('test'))
-		print clf.classify_many(self.featext.getFeatures('test',labeled=False))
-		# self.clf_base_svm = clf
-		# print self.featext.temp
+	def build(self, model):
+		print 'Training NB '
+		feats = ['words','lexiconsbyword','topic']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		for mode in ['simple','tfidf']:
+			if model=='bayes':
+				cl = MultinomialNB()
+			elif model=='svm':
+				cl = LinearSVC()
 
+			if mode=='tfidf':
+				X = TfidfTransformer().fit_transform(X).toarray()
+				X_test = TfidfTransformer().fit_transform(X_test).toarray()
+			
+			clf = cl.fit(X, y)
+			y_pred = clf.predict(X_test)
+			print '\t',mode, accuracy_score(y_true, y_pred)
 
-	def buildNB(self):
-		#with additioanl features
-		#simple, no ensemble
-		X = self.featext.getFeatures('train')
-		clf = nbclf.train(X)
-		print 'Training done'
-		print 'Testing...'
-		print accuracy(clf, self.featext.getFeatures('test'))
-		print clf.show_most_informative_features(30)
+	# def buildSeparate(self):
+	# 	#builds two separate for topic and stance, and later for wikilink/word2vec
+	# 	#WIP
+	# 	topic_clf = SklearnClassifier(LinearSVC())
+	# 	topic_clf = topic_clf.train(self.fe.getFeatures('train',withtopic=False))
 
-	def buildSeparate(self):
-		#builds two separate for topic and stance
-		#WIP
-		topic_clf = SklearnClassifier(SVC())
-		topic_clf = topic_clf.train(self.featext.getFeatures('train',withtopic=False))
+	# 	stance_clf = SklearnClassifier(LinearSVC())
+	# 	stance_clf = stance_clf.train(self.fe.getFeatures('train',withtopic=True))
 
-		stance_clf = SklearnClassifier(SVC())
-		stance_clf = stance_clf.train(self.featext.getFeatures('train',withtopic=True))
+	# def stacked(self):
+	# 	count_vect = CountVectorizer(decode_error='ignore')
+	# 	matrix_counts = self.fe.getFeatures('train', True)
+	# 	print matrix_counts
+	# 	tf_idf = TfidfTransformer()
+	# 	tfidf_matrix = tf_idf.fit_transform(matrix_counts)
+	# 	print tfidf_matrix
 
 
 
 
 if __name__=='__main__':
-	# sd = StanceDetector()
-	# sd.buildBaselineSVM()
-
-	sd2 = StanceDetector()
-	sd2.buildSVM()
+	sd = StanceDetector()
+	sd.buildBaseline('svm')
+	sd.build('svm')
 
 
 
