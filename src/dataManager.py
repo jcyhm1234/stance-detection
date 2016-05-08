@@ -32,7 +32,8 @@ class DataManager:
 		# remove the header from the data
 		self.trainData.pop(0)
 		self.testData.pop(0)
-
+		self.trainData = self.trainData[:5]
+		self.testData = self.testData[:5]
 		print 'Loaded %s training samples' % len(self.trainData),'and %s testing samples'%  len(self.testData)
 
 	def preprocess(self):
