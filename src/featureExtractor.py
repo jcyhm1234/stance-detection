@@ -62,29 +62,30 @@ class FeatureExtractor:
 	# 		return pos_tags[word]
 
 
-	def getTweetFeatures(self, sample):
+	def getTweetFeatures(self, sample, baseline, withtopic):
 		# self.temp += 1
 		features = {}
 		tweet_words = set(sample[:-1])
-		features['topic'] = sample[-1]
+		
+		if withtopic:
+			features['topic'] = sample[-1]
 		#Gets the tweet feature for a single tweet
 		for word in self.corpus:
 			features['contains({})'.format(word)] = (word in tweet_words)
-			if not self.for_baseline:
+			if not baseline:
 				features['subj({})'.format(word)] = (self.getSubjectivity(word, tweet_words))
 				features['pol({})'.format(word)] = (self.getPolarity(word, tweet_words))
 				features['senti({})'.format(word)] = (self.getLiuSentiment(word, tweet_words))
 			# features['pos({})'.format(word)] = (self.getPosTagWord(word, tweet_words, pos_tags))
 		return features
 
-
-	def getFeatures(self, mode, for_baseline, labeled=True):
+	def getFeatures(self, mode, for_baseline=False, labeled=True, withtopic=True):
 		"""
 		labeled = True : returns[ (sample_features_dict, y_value),(.),..]
 				  False : returns [sample_features_dict,...]
 		"""
 		#hack to pass this variable to getTweetFeatures when using lazy loading
-		self.for_baseline = for_baseline
+		# self.for_baseline = for_baseline
 
 		#lazy handling. doesnt use all samples for some reason
 		# if mode=='train':
@@ -96,14 +97,22 @@ class FeatureExtractor:
 		if mode=='train':
 			for t in self.data.trainTweets:
 				# type is (tweetPreprocess(row[0])+[topic], y)
-				feats = self.getTweetFeatures(t[0])
-				features.append((feats,t[1]))
+				if withtopic:
+					feats = self.getTweetFeatures(t[0], baseline=for_baseline, withtopic=withtopic)
+					features.append((feats,t[1]))
+				else:
+					feats = self.getTweetFeatures(t[0], baseline=for_baseline, withtopic=withtopic)
+					features.append((feats,t[0][-1]))
+
 		elif mode=='test':
 			for t in self.data.testTweets:
 				# type is (tweetPreprocess(row[0])+[topic], y)
-				feats = self.getTweetFeatures(t[0])
+				feats = self.getTweetFeatures(t[0], baseline=for_baseline, withtopic=withtopic)
 				if labeled:
-					features.append((feats,t[1]))
+					if withtopic:
+						features.append((feats,t[1]))
+					else:
+						features.append((feats,t[0][-1]))
 				else:
 					features.append(feats)
 		return features

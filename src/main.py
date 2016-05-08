@@ -4,7 +4,7 @@ from nltk.classify import NaiveBayesClassifier as nbclf
 from nltk.classify import accuracy
 from nltk import classify
 from nltk.classify.scikitlearn import SklearnClassifier
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 
 class StanceDetector:
 	def __init__(self):
@@ -25,7 +25,7 @@ class StanceDetector:
 	def buildBaselineSVM(self):
 		X = self.featext.getFeatures('train',True)
 		print 'Training baseline...'
-		clf = SklearnClassifier(LinearSVC())
+		clf = SklearnClassifier(SVC())
 		clf = clf.train(X)
 		print 'Training done'
 		print 'Testing...'
@@ -33,14 +33,13 @@ class StanceDetector:
 		# self.clf_base_svm = clf
 
 	def buildSVM(self):
-		X = self.featext.getFeatures('train',False)
-		print 'Training baseline...'
-		clf = SklearnClassifier(LinearSVC())
+		X = self.featext.getFeatures('train')
+		clf = SklearnClassifier(SVC())
 		clf = clf.train(X)
 		print 'Training done'
 		print 'Testing...'
-		print accuracy(clf, self.featext.getFeatures('test',False))
-		print clf.classify_many(self.featext.getFeatures('test',False,False))
+		print accuracy(clf, self.featext.getFeatures('test'))
+		print clf.classify_many(self.featext.getFeatures('test',labeled=False))
 		# self.clf_base_svm = clf
 		# print self.featext.temp
 
@@ -48,17 +47,24 @@ class StanceDetector:
 	def buildNB(self):
 		#with additioanl features
 		#simple, no ensemble
-		X = self.featext.getFeatures('train',False)
-		print 'Training baseline...'
+		X = self.featext.getFeatures('train')
 		clf = nbclf.train(X)
 		print 'Training done'
 		print 'Testing...'
-		print accuracy(clf, self.featext.getFeatures('test',False))
+		print accuracy(clf, self.featext.getFeatures('test'))
 		print clf.show_most_informative_features(30)
 
 	def buildTwo(self):
 		#builds two separate for topic and stance
-		pass
+		#WIP
+		topic_clf = SklearnClassifier(SVC())
+		topic_clf = topic_clf.train(self.featext.getFeatures('train',withtopic=False))
+		
+		stance_clf = SklearnClassifier(SVC())
+		stance_clf = stance_clf.train(self.featext.getFeatures('train',withtopic=True))
+
+
+
 
 if __name__=='__main__':
 	# sd = StanceDetector()
