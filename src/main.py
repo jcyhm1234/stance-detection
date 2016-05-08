@@ -54,12 +54,12 @@ class StanceDetector:
 		print accuracy(clf, self.featext.getFeatures('test'))
 		print clf.show_most_informative_features(30)
 
-	def buildTwo(self):
+	def buildSeparate(self):
 		#builds two separate for topic and stance
 		#WIP
 		topic_clf = SklearnClassifier(SVC())
 		topic_clf = topic_clf.train(self.featext.getFeatures('train',withtopic=False))
-		
+
 		stance_clf = SklearnClassifier(SVC())
 		stance_clf = stance_clf.train(self.featext.getFeatures('train',withtopic=True))
 
