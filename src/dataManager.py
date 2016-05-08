@@ -21,8 +21,8 @@ class DataManager:
 		self.tknzr = TweetTokenizer()
 
 		self.load()
+		self.loadStopwords()
 		self.preprocess()
-
 
 	def load(self):
 		with open(self.trainFile, 'r') as f:
@@ -32,18 +32,28 @@ class DataManager:
 		# remove the header from the data
 		self.trainData.pop(0)
 		self.testData.pop(0)
-		self.trainData = self.trainData[:5]
-		self.testData = self.testData[:5]
 		print 'Loaded %s training samples' % len(self.trainData),'and %s testing samples'%  len(self.testData)
+	
+	def loadStopwords(self):
+		with open('../lexicons/stopwords.txt','r') as f:
+			self.stopwords = set([row for row in f.read().splitlines()])
 
 	def preprocess(self):
-		#also give the target
-		self.trainTweets = [(self.tweetPreprocess(row[0])+[row[1]],row[2]) for row in self.trainData]
-		self.testTweets = [(self.tweetPreprocess(row[0])+[row[1]], row[2]) for row in self.testData]
+		self.trainTweetsText = [self.tweetPreprocess(row[0]) for row in self.trainData]
+		self.testTweetsText = [self.tweetPreprocess(row[0]) for row in self.testData]
+		
+		self.trainTopics = [row[1] for row in self.trainData]
+		self.testTopics = [row[1] for row in self.testData]
+
 		self.trainLabels = [row[2] for row in self.trainData]
 		self.testLabels = [row[2] for row in self.testData]
 
-	
+		# t is of form ([preprocessedwords]+[topic], y)
+		#plan to phase out
+		self.trainTweets = [(self.tweetPreprocess(row[0]),row[1],row[2]) for row in self.trainData]
+		self.testTweets = [(self.tweetPreprocess(row[0]),row[1], row[2]) for row in self.testData]
+
+
 	def tweetPreprocess(self,tw):
 		#remove nonascii
 		tw = ''.join(i for i in tw if ord(i)<128)
@@ -53,15 +63,23 @@ class DataManager:
 		#lowercase
 		tw = tw.lower()
 		#Convert @username to AT_USER
-		tw = re.sub('@[^\s]+','AT_USER',tw)
+		tw = re.sub('@[^\s]+','',tw)
 		#Remove additional white spaces
 		tw = re.sub('[\s]+', ' ', tw)
 		#remove punctuations
-		return self.tknzr.tokenize(tw)
+		words = self.tknzr.tokenize(tw)
+		words = self.removeStopwords(words)
+		return words
 
+	def removeStopwords(self, words):
+		rval = []
+		for w in words:
+			if w not in self.stopwords:
+				rval.append(w)
+		return rval
 
 def removeNumbers(tw):
-	tw = re.sub("\d+[.,:]*\d+","<num>",tw)
+	tw = re.sub("\d+[.,:]*\d+","",tw)
 	return tw
 
 def expandHashtag(tw):
@@ -81,4 +99,4 @@ def expandHashtag(tw):
 
 if __name__ == '__main__':
 	dp = DataManager('../data/train.csv','../data/test.csv')
-	print dp.trainTweets[0]
+	# print dp.trainTweets[0]

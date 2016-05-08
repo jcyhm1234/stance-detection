@@ -44,7 +44,7 @@ class Classifiers:
                       ('clf', SGDClassifier(loss='hinge', penalty='l2',alpha=1e-3, n_iter=5, random_state=42)), ])
 		return text_clf
 
-	def usingPipeline(self):		
+	def usingPipeline(self):
 		text_clf = self.SVMPipeline()
 		text_clf = text_clf.fit(Classifiers.dp.trainTweets, Classifiers.dp.trainLabels)
 		predicted = text_clf.predict(Classifiers.dp.testTweets)
