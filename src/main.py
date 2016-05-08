@@ -5,6 +5,7 @@ from nltk.classify import accuracy
 from nltk import classify
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 
 class StanceDetector:
 	def __init__(self):
@@ -57,21 +58,44 @@ class StanceDetector:
 	def buildSeparate(self):
 		#builds two separate for topic and stance
 		#WIP
-		topic_clf = SklearnClassifier(SVC())
+		test_features = self.featext.getFeatures('test',labeled=False)
+		topic_clf = SklearnClassifier(SVC(probability=True))
 		topic_clf = topic_clf.train(self.featext.getFeatures('train',withtopic=False))
-
+		# Get probablility dist over all labels
+		dist = topic_clf.prob_classify_many(test_features)
+		boost_factors = []
+		for d in dist:
+			# Get the label which has max probablity
+			prob = d.prob(d.max())
+			boost = 1
+			if prob < 0.4:
+				boost = 2
+			boost_factors.append(boost)
+		print 'boost factor length '
+		print len(boost_factors)
 		stance_clf = SklearnClassifier(SVC())
 		stance_clf = stance_clf.train(self.featext.getFeatures('train',withtopic=True))
-
-
+		test_labels = stance_clf.classify_many(test_features)
+		for i in range(0, len(test_labels)):
+			if boost_factors[i] == 2:
+				test_labels[i] = 'NONE'
+		#calculate accuracy
+		print self.data.testLabels
+		print test_labels
+		score = accuracy_score(self.data.testLabels, test_labels)
+		print score
 
 
 if __name__=='__main__':
 	# sd = StanceDetector()
 	# sd.buildBaselineSVM()
 
-	sd2 = StanceDetector()
-	sd2.buildSVM()
+	# sd2 = StanceDetector()
+	# sd2.buildSVM()
+
+	sd3 = StanceDetector()
+	sd3.buildSeparate()
+
 
 
 

@@ -100,10 +100,11 @@ class FeatureExtractor:
 				if withtopic:
 					feats = self.getTweetFeatures(t[0], baseline=for_baseline, withtopic=withtopic)
 					features.append((feats,t[1]))
+					#print 'Features with topic and training ', features
 				else:
 					feats = self.getTweetFeatures(t[0], baseline=for_baseline, withtopic=withtopic)
 					features.append((feats,t[0][-1]))
-
+					# print 'Features without topic and training ', features
 		elif mode=='test':
 			for t in self.data.testTweets:
 				# type is (tweetPreprocess(row[0])+[topic], y)
@@ -111,10 +112,13 @@ class FeatureExtractor:
 				if labeled:
 					if withtopic:
 						features.append((feats,t[1]))
+						# print 'Features with topic and test ', features
 					else:
 						features.append((feats,t[0][-1]))
+						# print 'Features without topic and test ', features
 				else:
 					features.append(feats)
+					# print 'Features without label', features
 		return features
 
 
