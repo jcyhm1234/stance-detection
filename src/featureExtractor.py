@@ -4,10 +4,10 @@ import numpy as np
 from CMUTweetTagger import runtagger_parse
 from nltk.classify.util import apply_features
 from sklearn.feature_extraction import DictVectorizer
+from sklearn import preprocessing
 
 from lexicons import SubjLexicon, LiuLexicon
 from dataManager import DataManager
-
 class FeatureExtractor:
 	def __init__(self, data):
 		self.data = data
@@ -16,7 +16,7 @@ class FeatureExtractor:
 		self.liu = LiuLexicon()
 		self.subj = SubjLexicon()
 		self.buildTweetCorpus()
-		self.mapStringToIndex()
+		self.initEncoders()
 
 	def buildTweetCorpus(self):
 		self.corpus = []
@@ -27,13 +27,18 @@ class FeatureExtractor:
 		self.corpus = set(self.corpus)
 		print 'Built corpus'
 
-	def mapStringToIndex(self):
+	def initEncoders(self):
+
+		self.topicenc = preprocessing.LabelEncoder()
+		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Donald Trump", "Hillary Clinton", "Legalization of Abortion"])
+
+		self.labelenc = preprocessing.LabelEncoder()
+		self.labelenc.fit(["FAVOR","AGAINST","NONE"])
+		
 		i = 0
-		j = 0
-		k = 0
+		# j = 0
+		# k = 0
 		self.word2i = {}
-		self.topic2i = {}
-		self.label2i = {}
 		for dataset in [self.data.trainTweets, self.data.testTweets]:
 			for row in dataset:
 				#tuple of tweetwords, topic, label
@@ -41,12 +46,12 @@ class FeatureExtractor:
 					if w not in self.word2i:
 						self.word2i[w] = i
 						i+=1
-				if row[1] not in self.topic2i:
-					self.topic2i[row[1]] = j
-					j+=1
-				if row[2] not in self.label2i:
-					self.label2i[row[2]] = k
-					k+=1
+		# 		if row[1] not in self.topic2i:
+		# 			self.topic2i[row[1]] = j
+		# 			j+=1
+		# 		if row[2] not in self.label2i:
+		# 			self.label2i[row[2]] = k
+		# 			k+=1
 
 	def getSubjectivity(self, word, tweetwords):
 		if word in tweetwords:
@@ -110,6 +115,10 @@ class FeatureExtractor:
 				features.append(feats)
 		return features
 
+	def getWordIndex(self, word):
+		return self.word2i[word]
+		# return self.wordenc.transform([word])[0]
+	
 	#this method is 20 times faster than above dictionary method
 	def getFeaturesMatrix(self, mode, listOfFeats, y_feat):
 		if mode=='train':
@@ -122,38 +131,43 @@ class FeatureExtractor:
 				word_f = np.zeros((len(dataset),len(self.corpus)))
 				for count, sample in enumerate(dataset):
 					for word in sample[0]:
-						word_f[count][self.word2i[word]] += 1
+						word_f[count][self.getWordIndex(word)] += 1
 				features.append(word_f)
 			elif feat=='topic':
-				topic_f = np.zeros((len(dataset),1))
+				topics = []
 				for count, sample in enumerate(dataset):
-					topic_f[count] = self.topic2i[sample[1]]
+					topics.append(sample[1])
+				topic_f = self.topicenc.transform(topics)
+				topic_f = topic_f.reshape(topic_f.shape[0],1)
 				features.append(topic_f)
 			elif feat=='lexiconsbyword':
 				lex_f = np.zeros((len(dataset),len(self.corpus)*3))
 				for count, sample in enumerate(dataset):
 					for word in sample[0]:
-						lex_f[count][self.word2i[word]] += self.getSubjectivity(word, sample[0])
-						lex_f[count][self.word2i[word]+len(self.corpus)] += self.getPolarity(word, sample[0])
-						lex_f[count][self.word2i[word]+2*len(self.corpus)] += self.getLiuSentiment(word, sample[0])
+						lex_f[count][self.getWordIndex(word)] += self.getSubjectivity(word, sample[0])
+						lex_f[count][self.getWordIndex(word)+len(self.corpus)] += self.getPolarity(word, sample[0])
+						lex_f[count][self.getWordIndex(word)+2*len(self.corpus)] += self.getLiuSentiment(word, sample[0])
 				features.append(lex_f)
 			else:
 				print 'Feature not recognized'
 		features = np.concatenate(tuple(features), axis=1)
 
 		if y_feat:
-			y = np.zeros(len(dataset))			
+			y = []
 			if y_feat=='topic':
 				for count, sample in enumerate(dataset):
-					y[count] = self.topic2i[sample[1]]
+					y.append(sample[1])
+				y = self.topicenc.transform(y)
 			elif y_feat=='stance':
 				for count, sample in enumerate(dataset):
-					y[count] = self.label2i[sample[2]]
+					y.append(sample[2])
+				y = self.labelenc.transform(y)
+			# y = y.reshape(y.shape[0],1)
 
-			print 'Shape of features', features.shape
+			# print 'Shape ', features.shape, y.shape
 			return features, y
 		else:
-			print 'Shape of features', features.shape
+			# print 'Shape of features', features.shape
 			return features
 
 if __name__ == '__main__':
