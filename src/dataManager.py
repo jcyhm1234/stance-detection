@@ -49,8 +49,7 @@ class DataManager:
 		self.trainLabels = [row[2] for row in self.trainData]
 		self.testLabels = [row[2] for row in self.testData]
 
-		# t is of form ([preprocessedwords]+[topic], y)
-		#plan to phase out
+		# t is of form ([preprocessedwords,topic], y)
 		self.trainTweets = [(self.tweetPreprocess(row[0]),row[1],row[2]) for row in self.trainData]
 		self.testTweets = [(self.tweetPreprocess(row[0]),row[1], row[2]) for row in self.testData]
 
