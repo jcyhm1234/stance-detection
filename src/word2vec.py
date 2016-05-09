@@ -1,3 +1,4 @@
+from __future__ import division
 from gensim import models
 from numpy import array
 from scipy.cluster.vq import kmeans2
@@ -116,6 +117,7 @@ class Word2Vec:
 			print 'Built word2vec vectors for positive words'
 			pickle.dump(positive_vectors, open(self.positive_words_vector_file, "wb"))
 
+
 	# def getWord2VecSubjectivity(self):
 	# 	subjectivity_vectors = ()
 	# 	with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
@@ -130,10 +132,4 @@ class Word2Vec:
 	# 					continue
 	# 				else:
 	# 					self.lex[word][key] = val
-
-		
-
-
-
-
 
