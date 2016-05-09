@@ -88,40 +88,45 @@ class StanceDetector:
 			y_pr = clf.predict(X_test)
 			return clf, y_pr
 
-	def buildTopicStanceSeparate(self):
-		feats = ['words']
-		y_attribute = 'stance'
-		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+	#TODO: revisit
+	#check lable transform encodings of NONE, FAVOR, AGAINST
+	# def buildTopicStanceSeparate(self):
+	# 	feats = ['words']
+	# 	y_attribute = 'stance'
+	# 	X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 
-		#builds two separate for topic and stance
-		topic_clf, y_topic_proba = self.trainLinearSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',dec=True)
+	# 	#builds two separate for topic and stance
+	# 	topic_clf, y_topic_proba = self.trainLinearSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',dec=True)
 		
-		boost_factors = np.ones_like(y_true)
-		#multiply by NONE (0) = 0
-		#multiply by FAVOR (1) = 1
-		#multiply by AGAINST (2) = 2
+	# 	#WRONR
+	# 	#WRONG
+	# 	#WRONG
+	# 	boost_factors = np.ones_like(y_true)
+	# 	#multiply by NONE (0) = 0
+	# 	#multiply by FAVOR (1) = 1
+	# 	#multiply by AGAINST (2) = 2
 
-		#has index of class with max prob for each sample
-		topic_preds = np.argmax(y_topic_proba,axis=1)
-		for ind,s in enumerate(y_topic_proba):
-			prob = y_topic_proba[ind][topic_preds[ind]]
-			if prob < 0.4:
-				boost_factors[ind] = 0 #corresponds to NONE
+	# 	#has index of class with max prob for each sample
+	# 	topic_preds = np.argmax(y_topic_proba,axis=1)
+	# 	for ind,s in enumerate(y_topic_proba):
+	# 		prob = y_topic_proba[ind][topic_preds[ind]]
+	# 		if prob < 0.4:
+	# 			boost_factors[ind] = 0 #corresponds to NONE
 		
-		stance_clf,stance_pred = self.trainLinearSVC(feats = ['words','lexiconsbyword','topic'],y_attribute = 'stance')		
+	# 	stance_clf,stance_pred = self.trainLinearSVC(feats = ['words','lexiconsbyword','topic'],y_attribute = 'stance')		
 		
-		# for i in range(0, len(stance_pred)):
-		# 	if boost_factors[i] == 2:
-		# 		stance_pred[i] = self.fe.labelenc.transform("NONE")
+	# 	# for i in range(0, len(stance_pred)):
+	# 	# 	if boost_factors[i] == 2:
+	# 	# 		stance_pred[i] = self.fe.labelenc.transform("NONE")
 		
-		#with numpy arrays now, above is equivalent to below , right?
-		stance_pred = np.multiply(stance_pred, boost_factors)
-		stance_pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
+	# 	#with numpy arrays now, above is equivalent to below , right?
+	# 	stance_pred = np.multiply(stance_pred, boost_factors)
+	# 	stance_pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
 
-		# print [(self.data.testLabels[i], stance_pred_labels[i]) for i in range(len(stance_pred))]
-		score = accuracy_score(y_true, stance_pred)
-		print score
-		pprint(self.eval.computeFscores(self.data.testTweets, stance_pred_labels))
+	# 	# print [(self.data.testLabels[i], stance_pred_labels[i]) for i in range(len(stance_pred))]
+	# 	score = accuracy_score(y_true, stance_pred)
+	# 	print score
+	# 	pprint(self.eval.computeFscores(self.data.testTweets, stance_pred_labels))
 
 	def buildTopicOnlyMultiple(self):
 		#one svm for each topic
@@ -214,15 +219,59 @@ class StanceDetector:
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+	def trainStanceNone(self, feats):
+		# feats = ['words2vec','topic1hot','pos']
+		X,y = self.fe.getFeaturesStanceNone('train',feats)
+		Xt,yt = self.fe.getFeaturesStanceNone('test',feats)
+		stance_none_clf = LinearSVC().fit(X, y)
+		# print stance_none_clf.score(Xt, yt)
+		return stance_none_clf
+
+	def trainFavorAgainst(self,feats):
+		# feats = ['words2vec','topic1hot','pos']
+		X,y = self.fe.getFeaturesFavorAgainst('train',feats)
+		Xt,yt = self.fe.getFeaturesFavorAgainst('test',feats)
+		fav_agnst_clf = LinearSVC().fit(X, y)
+		# print fav_agnst_clf.score(Xt, yt)
+		return fav_agnst_clf
+
+	def buildModel2(self):
+		#one SVM for Stance/None and other for Favor/Against
+		feats = ['words2vec','topic1hot','pos']
+		stance_none_clf = self.trainStanceNone(feats)
+		fav_agnst_clf = self.trainFavorAgainst(feats)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,'stance')
+		
+		assert(stance_none_clf.classes_[1]==3) #stance(3)
+		# >0 means this class - stance will be predicted
+		# <0 means none is predicted
+		confi = stance_none_clf.decision_function(X_test)
+		# treat as confident about none if confi<-0.25:
+		y_pred = fav_agnst_clf.predict(X_test)
+		print accuracy_score(y_true, y_pred)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		
+		threshold = -0.25
+		confi_high = np.where(confi<threshold)[0]
+		for loc in confi_high:
+			y_pred[loc] = self.fe.labelenc.transform('NONE')
+		print 'Boosted', accuracy_score(y_true, y_pred)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		
+
 if __name__=='__main__':
 	sd = StanceDetector()
 	# sd.buildBaseline('bayes')
 	# sd.buildSimple('svm')
 	# sd.buildTopicStanceSeparate()
 	# sd.buildTopicWise()
-	sd.buildSVMWord2Vec()
 	# sd.buildTopicOnlyIndiv()
 	# sd.buildTopicOnlySingle()
+	# sd.buildSVMWord2Vec()
+	# sd.buildStanceNone()
+	# sd.trainStanceNone()
+	# sd.trainFavorAgainst()
+	sd.buildModel2()
 
 
 

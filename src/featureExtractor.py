@@ -257,9 +257,32 @@ class FeatureExtractor:
 			rval = X
 		return rval
 
+	def getFeaturesFavorAgainst(self, mode, listOfFeats):
+		#only tweets with favor or against
+		X, y = self.getFeaturesMatrix(mode, listOfFeats, 'stance')
+		# print X,y
+		nonerows = np.where(y==self.labelenc.transform('NONE'))[0]
+		# print y
+		# print nonerows
+		X = np.delete(X, nonerows, axis=0)
+
+		y = np.delete(y, nonerows)
+		return X,y
+
+	def getFeaturesStanceNone(self, mode, listOfFeats):
+		X, y = self.getFeaturesMatrix(mode, listOfFeats, 'stance')
+		y[y == self.labelenc.transform('FAVOR')] = 3
+		y[y == self.labelenc.transform('AGAINST')] = 3
+		return X, y
+
 if __name__ == '__main__':
 	dp = DataManager('../data/train.csv','../data/test.csv')
 	fe = FeatureExtractor(dp)
+	# fe.getYStanceNone('train')
+	# fe.getFeaturesFavorAgainst('train',['words2vec'])
+	# fe.getFeaturesStanceNone('train',['words2vec'])
+	X,y = fe.getFeaturesFavorAgainst('train',['words2vec'])
+
 	# print fe.getFeaturesMatrix('train',['words'],'topic','Hillary Clinton')[0].shape
 	# print fe.getFeaturesTopicNontopic('train',['words'],'topic', 'Hillary Clinton')[0].shape
 	# print fe.getX('train',fe.data.trainTweets, ['words2vec']).shape

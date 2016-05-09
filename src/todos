@@ -3,6 +3,8 @@
 	# Entire document word2vec classification 
 # Are we training with the target ? for the normal classifiers  ?
 # introduce gridsearch
+# move pickle files to folder outside src
+
 
 Models to build
 1. Single SVM with these features

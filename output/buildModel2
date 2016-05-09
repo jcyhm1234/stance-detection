@@ -1,0 +1,8 @@
+0.626901521217
+{'AGAINST': {'f-score:': 0.7556, 'precision:': 0.6789, 'recall:': 0.8517},
+ 'FAVOR': {'f-score:': 0.5305, 'precision:': 0.4943, 'recall:': 0.5724},
+ 'Macro': 0.643}
+Boosted 0.634907926341
+{'AGAINST': {'f-score:': 0.7556, 'precision:': 0.6979, 'recall:': 0.8238},
+ 'FAVOR': {'f-score:': 0.5201, 'precision:': 0.5078, 'recall:': 0.5329},
+ 'Macro': 0.6378}
