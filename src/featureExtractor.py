@@ -251,9 +251,11 @@ class FeatureExtractor:
 					vecs[2].append(self.clusters.getPolarity(wordsAsVecs))
 				# allvecs = np.concatenate(tuple(vecs))
 				for vecsi in vecs:
+					#print 'Adding ', np.asarray(vecsi).shape
 					features.append(np.asarray(vecsi))
 			else:
 				print 'Feature not recognized'
+		print 'Final Feature set size:', len(features)
 		features = np.concatenate(tuple(features), axis=1)
 		return features
 

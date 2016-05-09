@@ -238,13 +238,23 @@ class StanceDetector:
 		return param_grid
 
 	def buildSVMWord2VecWithClusters(self):
-		feats = ['words2vec','topic1hot','pos','clusteredLexicons']
+		#feats = ['topic1hot']
+		#feats = ['words2vec']
+		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons']
+		#feats = ['clusteredLexicons']
+		#feats = ['pos']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		print (X.shape)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
+		f = open('pred','w')
+		for i in y_pred:
+			#print type(i)
+			f.write('{0}'.format(i))
+		f.close()
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
@@ -312,7 +322,7 @@ if __name__=='__main__':
 	# sd.buildTopicWise()
 	# sd.buildTopicOnlyIndiv()
 	# sd.buildTopicOnlySingle()
-	# sd.buildSVMWord2Vec()
+	#sd.buildSVMWord2Vec()
 	# sd.buildStanceNone()
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
