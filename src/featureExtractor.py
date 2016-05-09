@@ -1,27 +1,23 @@
 import operator
 import numpy as np
-
 from CMUTweetTagger import runtagger_parse
 from nltk.classify.util import apply_features
-<<<<<<< HEAD
 from word2vec import Word2Vec
-=======
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import preprocessing
-
 from lexicons import SubjLexicon, LiuLexicon
 from dataManager import DataManager
->>>>>>> dae677e6db641a98e3b67f6efccf3cee1c50fbf7
+
 class FeatureExtractor:
 	def __init__(self, data):
 		self.data = data
 		self.corpus = None
-
 		self.liu = LiuLexicon()
 		self.subj = SubjLexicon()
-		self.word_vec_model = Word2Vec()
 		self.buildTweetCorpus()
+		self.word_vec_model = Word2Vec()
 		self.initEncoders()
+
 
 	def buildTweetCorpus(self):
 		self.corpus = []
@@ -31,7 +27,7 @@ class FeatureExtractor:
 				self.corpus.extend(words)
 		self.corpus = set(self.corpus)
 		print 'Built corpus'
-
+		
 	def initEncoders(self):
 
 		self.topicenc = preprocessing.LabelEncoder()
