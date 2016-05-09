@@ -74,7 +74,7 @@ class FeatureExtractor:
 
 
 	def getWord2Vec(self, tweetwords):
-		return self.word_vec_model.getFeatureVectors(tweetwords)
+		return self.word_vec_model.getFeatureVectorsFromBinary(tweetwords)
 
 	# def getPOSTags(self, tweets):
 	# 	tagtuples = runtagger_parse(tweets)
@@ -115,7 +115,7 @@ class FeatureExtractor:
 				features['senti({})'.format(word)] = (self.getLiuSentiment(word, tweet_words))
 			# features['pos({})'.format(word)] = (self.getPosTagWord(word, tweet_words, pos_tags))
 		# Add the word2vec representation for the entire tweet
-		features['vector'] = (self.getWord2Vec(tweet_words))
+		features['vector'] = (self.word_vec_model.getFeatureVectorsFromBinary(tweet_words))
 		return features
 
 	def getFeatures(self, mode, listOfFeats, y_feat):

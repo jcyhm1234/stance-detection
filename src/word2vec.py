@@ -15,6 +15,7 @@ class Word2Vec:
 			self.buildVectorCorpus(corpus)
 		#load the pickle file into a dictionary
 		self.corpus_vectors = pickle.load( open( self.corpus_vector_file, "rb" ) )
+		print 'loaded corpus vectors', len(self.corpus_vectors)
 		self.size = 300
 
 	def getFeatureVectors(self, data):
@@ -39,8 +40,9 @@ class Word2Vec:
 		sum_vec = np.zeros(size)
 		no_of_tokens = 0
 		for token in data:
+			#print 'Token', token
 			try:
-				sum_vec += corpus_vectors[token]
+				sum_vec += self.corpus_vectors[token]
 				no_of_tokens += 1
 				type(sum_vec)
 			except:
