@@ -38,7 +38,7 @@ class SubjLexicon(Lexicon):
 
 				pol = self.lex[w]['priorpolarity']
 				if pol=='negative':
-					pola.append(-1)
+					pola.append(2)
 				elif pol=='positive':
 					pola.append(1)
 				else:
@@ -52,7 +52,7 @@ class SubjLexicon(Lexicon):
 		if w in self.lex:
 			pol = self.lex[w]['priorpolarity']
 			if pol=='negative':
-				pola = -1
+				pola = 2
 			elif pol=='positive':
 				pola = 1
 			else:
@@ -89,7 +89,7 @@ class LiuLexicon(Lexicon):
 			for line in read_data:
 				lin = line.strip()
 				if lin and lin[0]!=';':
-					self.lex[lin] = -1
+					self.lex[lin] = 2
 		with open('../lexicons/liu/positive-words.txt', 'r') as f:
 			read_data = f.readlines()
 			for line in read_data:

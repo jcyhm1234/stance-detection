@@ -30,7 +30,7 @@ class FeatureExtractor:
 	def initEncoders(self):
 
 		self.topicenc = preprocessing.LabelEncoder()
-		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Donald Trump", "Hillary Clinton", "Legalization of Abortion"])
+		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Hillary Clinton", "Legalization of Abortion"])
 
 		self.labelenc = preprocessing.LabelEncoder()
 		self.labelenc.fit(["NONE","FAVOR","AGAINST"])
@@ -71,60 +71,66 @@ class FeatureExtractor:
 		else:
 			return 0
 
-	def getTweetFeatures(self, sample, listOfFeats):
-		#sample is tuple of tweet_words, topic, label
-		#list of feats can include 'words','topic','label','lexiconsbyword'
-		features = {}
-		tweet_words = set(sample[0])
+	# def getTweetFeatures(self, sample, listOfFeats):
+	# 	#sample is tuple of tweet_words, topic, label
+	# 	#list of feats can include 'words','topic','label','lexiconsbyword'
+	# 	features = {}
+	# 	tweet_words = set(sample[0])
 		
-		if 'topic' in listOfFeats:
-			features['topic'] = sample[1]
+	# 	if 'topic' in listOfFeats:
+	# 		features['topic'] = sample[1]
 
-		#Gets the tweet feature for a single tweet
-		for word in self.corpus:
-			if 'words' in listOfFeats:
-				features['contains({})'.format(word)] = (word in tweet_words)
-			if 'lexiconsbyword' in listOfFeats:
-				features['subj({})'.format(word)] = (self.getSubjectivity(word, tweet_words))
-				features['pol({})'.format(word)] = (self.getPolarity(word, tweet_words))
-				features['senti({})'.format(word)] = (self.getLiuSentiment(word, tweet_words))
+	# 	#Gets the tweet feature for a single tweet
+	# 	for word in self.corpus:
+	# 		if 'words' in listOfFeats:
+	# 			features['contains({})'.format(word)] = (word in tweet_words)
+	# 		if 'lexiconsbyword' in listOfFeats:
+	# 			features['subj({})'.format(word)] = (self.getSubjectivity(word, tweet_words))
+	# 			features['pol({})'.format(word)] = (self.getPolarity(word, tweet_words))
+	# 			features['senti({})'.format(word)] = (self.getLiuSentiment(word, tweet_words))
 
-		return features
+	# 	return features
 
-	def getFeatures(self, mode, listOfFeats, y_feat):
-		"""
-		labeled = True : returns[ (sample_features_dict, y_value),(.),..]
-				  False : returns [sample_features_dict,...]
-		"""
-		features = []
-		if mode=='train':
-			dataset = self.data.trainTweets
-		elif mode=='test':
-			dataset = self.data.testTweets
+	# def getFeatures(self, mode, listOfFeats, y_feat):
+	# 	"""
+	# 	labeled = True : returns[ (sample_features_dict, y_value),(.),..]
+	# 			  False : returns [sample_features_dict,...]
+	# 	"""
+	# 	features = []
+	# 	if mode=='train':
+	# 		dataset = self.data.trainTweets
+	# 	elif mode=='test':
+	# 		dataset = self.data.testTweets
 		
-		for t in dataset:
-			# t is of form ([preprocessedwords],topic, stance)
-			feats = self.getTweetFeatures(t, listOfFeats)
-			if y_feat:
-				if y_feat=='topic':
-					y = t[1]
-				elif y_feat=='stance':
-					y = t[2]
-				features.append((feats,y))
-			else:
-				features.append(feats)
-		return features
+	# 	for t in dataset:
+	# 		# t is of form ([preprocessedwords],topic, stance)
+	# 		feats = self.getTweetFeatures(t, listOfFeats)
+	# 		if y_feat:
+	# 			if y_feat=='topic':
+	# 				y = t[1]
+	# 			elif y_feat=='stance':
+	# 				y = t[2]
+	# 			features.append((feats,y))
+	# 		else:
+	# 			features.append(feats)
+	# 	return features
 
 	def getWordIndex(self, word):
 		return self.word2i[word]
 		# return self.wordenc.transform([word])[0]
 	
-	#this method is 20 times faster than above dictionary method
-	def getFeaturesMatrix(self, mode, listOfFeats, y_feat):
+	def getDataset(self, mode, topic='All'):
 		if mode=='train':
 			dataset = self.data.trainTweets
 		elif mode=='test':
 			dataset = self.data.testTweets
+		if topic=='All':
+			return dataset
+		else:
+			d = [row for row in dataset if row[1]==topic]
+			return d
+
+	def getX(self, dataset, listOfFeats):
 		features = []
 		for feat in listOfFeats:
 			if feat=='words':
@@ -133,6 +139,7 @@ class FeatureExtractor:
 					for word in sample[0]:
 						word_f[count][self.getWordIndex(word)] += 1
 				features.append(word_f)
+			
 			elif feat=='topic':
 				topics = []
 				for count, sample in enumerate(dataset):
@@ -140,6 +147,7 @@ class FeatureExtractor:
 				topic_f = self.topicenc.transform(topics)
 				topic_f = topic_f.reshape(topic_f.shape[0],1)
 				features.append(topic_f)
+			
 			elif feat=='lexiconsbyword':
 				lex_f = np.zeros((len(dataset),len(self.corpus)*3))
 				for count, sample in enumerate(dataset):
@@ -148,29 +156,35 @@ class FeatureExtractor:
 						lex_f[count][self.getWordIndex(word)+len(self.corpus)] += self.getPolarity(word, sample[0])
 						lex_f[count][self.getWordIndex(word)+2*len(self.corpus)] += self.getLiuSentiment(word, sample[0])
 				features.append(lex_f)
+			
 			else:
 				print 'Feature not recognized'
 		features = np.concatenate(tuple(features), axis=1)
+		return features
 
+	def getY(self, dataset, y_feat):
+		y = []
+		if y_feat=='topic':
+			for count, sample in enumerate(dataset):
+				y.append(sample[1])
+			y = self.topicenc.transform(y)
+		elif y_feat=='stance':
+			for count, sample in enumerate(dataset):
+				y.append(sample[2])
+			y = self.labelenc.transform(y)
+		return y
+
+	#this method is 20 times faster than above dictionary method
+	def getFeaturesMatrix(self, mode, listOfFeats, y_feat, topic='All'):
+		dataset = self.getDataset(mode, topic)
+		X = self.getX(dataset, listOfFeats)
 		if y_feat:
-			y = []
-			if y_feat=='topic':
-				for count, sample in enumerate(dataset):
-					y.append(sample[1])
-				y = self.topicenc.transform(y)
-			elif y_feat=='stance':
-				for count, sample in enumerate(dataset):
-					y.append(sample[2])
-				y = self.labelenc.transform(y)
-			# y = y.reshape(y.shape[0],1)
-
-			# print 'Shape ', features.shape, y.shape
-			return features, y
+			y = self.getY(dataset, y_feat)
+			return X, y
 		else:
-			# print 'Shape of features', features.shape
-			return features
+			return X
 
 if __name__ == '__main__':
 	dp = DataManager('../data/train.csv','../data/test.csv')
 	fe = FeatureExtractor(dp)
-	fe.getFeaturesMatrix('train',['words'],'topic')
+	print fe.getFeaturesMatrix('train',['words'],'topic', 'Hillary Clinton')[0].shape

@@ -41,17 +41,17 @@ class DataManager:
 
 	def preprocess(self):
 		self.trainTweetsText = [self.tweetPreprocess(row[0]) for row in self.trainData]
-		self.testTweetsText = [self.tweetPreprocess(row[0]) for row in self.testData]
+		self.testTweetsText = [self.tweetPreprocess(row[0]) for row in self.testData if row[1]!='Donald Trump']
 		
 		self.trainTopics = [row[1] for row in self.trainData]
-		self.testTopics = [row[1] for row in self.testData]
+		self.testTopics = [row[1] for row in self.testData if row[1]!='Donald Trump']
 
 		self.trainLabels = [row[2] for row in self.trainData]
-		self.testLabels = [row[2] for row in self.testData]
+		self.testLabels = [row[2] for row in self.testData if row[1]!='Donald Trump']
 
-		# t is of form ([preprocessedwords,topic], y)
+		# t is of form (preprocessedwords,topic, y)
 		self.trainTweets = [(self.tweetPreprocess(row[0]),row[1],row[2]) for row in self.trainData]
-		self.testTweets = [(self.tweetPreprocess(row[0]),row[1], row[2]) for row in self.testData]
+		self.testTweets = [(self.tweetPreprocess(row[0]),row[1], row[2]) for row in self.testData if row[1]!='Donald Trump']
 
 
 	def tweetPreprocess(self,tw):

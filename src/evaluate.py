@@ -5,17 +5,17 @@ class Evaluate:
 	helps use given script to compute F-scores from predictions and gold labels
 
 	"""
-	def computeFscores(self, testData, predstance):
+	def computeFscores(self, testTweets, predstance):
 		f = open('../output/tmp_gold','w')
 		f.write('ID	Target	Tweet	Stance\n')
-		for ind,tw in enumerate(testData):
-			f.write(str(ind)+'\t'+tw[1]+'\t'+tw[0]+'\t'+tw[2]+'\n')
+		for ind,tw in enumerate(testTweets):
+			f.write(str(ind)+'\t'+tw[1]+'\t'+str(tw[0])+'\t'+tw[2]+'\n')
 		f.close()
 
 		f = open('../output/tmp_pred','w')
 		f.write('ID	Target	Tweet	Stance\n')
-		for ind,tw in enumerate(testData):
-			f.write(str(ind)+'\t'+tw[1]+'\t'+tw[0]+'\t'+predstance[ind]+'\n')
+		for ind,tw in enumerate(testTweets):
+			f.write(str(ind)+'\t'+tw[1]+'\t'+str(tw[0])+'\t'+predstance[ind]+'\n')
 		f.close()
 
 		return self.computeFscoresFromFiles('../output/tmp_gold','../output/tmp_pred')
