@@ -8,6 +8,7 @@ from sklearn import preprocessing
 from lexicons import SubjLexicon, LiuLexicon
 from dataManager import DataManager
 from random import shuffle
+from glove import Glove
 class FeatureExtractor:
 	def __init__(self, data):
 		self.data = data
@@ -16,6 +17,7 @@ class FeatureExtractor:
 		self.subj = SubjLexicon()
 		self.buildTweetCorpus()
 		self.word_vec_model = Word2Vec(self.corpus)
+		self.glove_vec_model = Glove(100, self.corpus)
 		self.initEncoders()
 
 	def buildTweetCorpus(self):
@@ -206,8 +208,12 @@ class FeatureExtractor:
 					vecs.append(self.getWord2Vec(tweet[0]))
 				features.append(np.asarray(vecs))
 
+			elif feat=='glove':
+				vecs = []
+				for tweet in dataset:
+					vecs.append(self.glove_vec_model.getVecOfTweet(tweet[0]))
+				features.append(np.asarray(vecs))
 			# elif feat=='topunigrams':
-
 
 			else:
 				print 'Feature not recognized'

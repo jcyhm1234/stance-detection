@@ -63,7 +63,7 @@ class DataManager:
 		#lowercase
 		tw = tw.lower()
 		#Convert @username to AT_USER
-		tw = re.sub('@[^\s]+','',tw)
+		tw = re.sub('@[^\s]+','<user>',tw)
 		#Remove additional white spaces
 		tw = re.sub('[\s]+', ' ', tw)
 		#remove punctuations
@@ -79,7 +79,7 @@ class DataManager:
 		return rval
 
 def removeNumbers(tw):
-	tw = re.sub("\d+[.,:]*\d+","",tw)
+	tw = re.sub("\d+[.,:]*\d+","<number>",tw)
 	return tw
 
 def expandHashtag(tw):

@@ -219,11 +219,22 @@ class StanceDetector:
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+	def buildSVMGlove(self):
+		feats = ['glove','topic1hot','pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
 	def trainStanceNone(self, feats):
 		# feats = ['words2vec','topic1hot','pos']
 		X,y = self.fe.getFeaturesStanceNone('train',feats)
 		Xt,yt = self.fe.getFeaturesStanceNone('test',feats)
-		stance_none_clf = LinearSVC().fit(X, y)
+		stance_none_clf = LinearSVC(C=0.01).fit(X, y)
 		# print stance_none_clf.score(Xt, yt)
 		return stance_none_clf
 
@@ -231,7 +242,7 @@ class StanceDetector:
 		# feats = ['words2vec','topic1hot','pos']
 		X,y = self.fe.getFeaturesFavorAgainst('train',feats)
 		Xt,yt = self.fe.getFeaturesFavorAgainst('test',feats)
-		fav_agnst_clf = LinearSVC().fit(X, y)
+		fav_agnst_clf = LinearSVC(C=0.01).fit(X, y)
 		# print fav_agnst_clf.score(Xt, yt)
 		return fav_agnst_clf
 
@@ -271,7 +282,8 @@ if __name__=='__main__':
 	# sd.buildStanceNone()
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
-	sd.buildModel2()
+	# sd.buildModel2()
+	sd.buildSVMGlove()
 
 
 
