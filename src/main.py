@@ -11,6 +11,7 @@ from evaluate import Evaluate
 from pprint import pprint
 import numpy as np
 from sklearn import tree
+from sklearn.grid_search import GridSearchCV
 
 class StanceDetector:
 	def __init__(self):
@@ -230,6 +231,39 @@ class StanceDetector:
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+	def getGridSearchParams(self):
+		param_grid = [
+				{'C': [0.001, 0.01, 0.1, 1], 'penalty': ['l2'], 'dual':[False,True]}
+		 ]
+		return param_grid
+
+	def buildSVMWord2VecWithClusters(self):
+		feats = ['words2vec','topic1hot','pos','clusteredLexicons']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
+	def buildSVMWord2VecWithClustersGridSearch(self):
+		feats = ['words2vec','topic1hot','pos', 'clusteredLexicons']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		
+		svmclf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = GridSearchCV(svmclf, self.getGridSearchParams())
+		clf = clf.fit(X,y)
+		print clf.best_params_
+
+		y_pred = clf.predict(Xt)
+		
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
 	def trainStanceNone(self, feats):
 		# feats = ['words2vec','topic1hot','pos']
 		X,y = self.fe.getFeaturesStanceNone('train',feats)
@@ -283,7 +317,8 @@ if __name__=='__main__':
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
 	# sd.buildModel2()
-	sd.buildSVMGlove()
+	sd.buildSVMWord2VecWithClusters()
+	# sd.buildSVMWord2VecWithClustersGridSearch()
 
 
 
