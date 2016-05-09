@@ -1,3 +1,4 @@
+from __future__ import division
 from gensim import models
 from numpy import array
 from scipy.cluster.vq import kmeans2
@@ -113,7 +114,7 @@ class Word2Vec:
 						# Handle key error while using the vector set
 						print 'Not found', word_key
 			print 'Built word2vec vectors for positive words'
-			pickle.dump(negative_vectors, open(self.positive_words_vector_file, "wb"))
+			pickle.dump(positive_vectors, open(self.positive_words_vector_file, "wb"))
 		
 
 
