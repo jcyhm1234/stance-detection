@@ -13,11 +13,14 @@ class Word2Vec:
 		self.corpus_vector_file = 'word2vec_corpus.p'
 		self.positive_words_vector_file = 'positive_words_corpus.p'
 		self.negative_words_vector_file = 'negative_words_corpus.p'
-		self.subjectivity_vector_file = 'negative_words_corpus.p'
-		if not os.path.isfile(self.positive_words_vector_file):
+		self.positive_sub_vector_file = 'positive_sub_corpus.p'
+		self.negative_sub_vector_file = 'negative_sub_corpus.p'
+		self.neutral_sub_vector_file = 'neutral_words_corpus.p'
+		if not os.path.isfile(self.positive_sub_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 			#self.buildVectorCorpus(corpus)
-			self.getWord2VecFeaturesForLin()
+			#self.getWord2VecFeaturesForLin()
+			self.getWord2VecSubjectivity()
 		#load the pickle file into a dictionary
 		self.corpus_vectors = pickle.load( open( self.corpus_vector_file, "rb" ) )
 		print 'loaded corpus vectors', len(self.corpus_vectors)
@@ -118,18 +121,35 @@ class Word2Vec:
 			pickle.dump(positive_vectors, open(self.positive_words_vector_file, "wb"))
 
 
-	# def getWord2VecSubjectivity(self):
-	# 	subjectivity_vectors = ()
-	# 	with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
-	# 		read_data = f.readlines()
-	# 		for line in read_data:
-	# 			parts = line.split()
-	# 			word = parts[2].split('=')[1]
-	# 			self.lex[word] = {}
-	# 			for p in parts:
-	# 				key,val = p.split('=')
-	# 				if key=='len' or key=='word1':
-	# 					continue
-	# 				else:
-	# 					self.lex[word][key] = val
+	def getWord2VecSubjectivity(self):
+		subjectivity_vectors = ()
+		with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
+			read_data = f.readlines()
+			lex = {}
+			positive_polarity = dict()
+			negative_polarity = dict()
+			neutral_polarity = dict()
+			for line in read_data:
+				parts = line.split()
+				word = parts[2].split('=')[1]
+				try:	
+					word_key = word.encode('utf8').strip()
+					vec = self.w[word_key]
+					for p in parts:
+						key,val = p.split('=')
+						if key=='priorpolarity':
+							if val == 'negative':
+								negative_polarity[word] = vec
+							elif val == 'positive':
+								positive_polarity[word] = vec
+							else:
+								neutral_polarity[word] = vec
+				except:
+					# Handle key error while using the vector set
+					print 'Not found', word_key
+			print 'Generated subjectivity word vecs'
+			pickle.dump(positive_polarity, open(self.positive_sub_vector_file, "wb"))
+			pickle.dump(negative_polarity, open(self.negative_sub_vector_file, "wb"))
+			pickle.dump(neutral_polarity, open(self.neutral_sub_vector_file, "wb"))
+				
 
