@@ -6,11 +6,13 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
-
+from evaluate import Evaluate
+from pprint import pprint
 class StanceDetector:
 	def __init__(self):
 		self.data = DataManager('../data/train.csv','../data/test.csv')
 		self.fe = FeatureExtractor(self.data)
+		self.eval = Evaluate()
 
 	def buildBaseline(self, model):
 		print 'Training baseline',model
@@ -30,7 +32,8 @@ class StanceDetector:
 			
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
-			print '\t',mode, accuracy_score(y_true, y_pred)
+			print mode, accuracy_score(y_true, y_pred)
+			pprint(self.eval.computeFscores(self.data.testData, self.fe.labelenc.inverse_transform(y_pred)))
 
 	def buildSimple(self, model):
 		print 'Training NB '
@@ -50,7 +53,8 @@ class StanceDetector:
 			
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
-			print '\t',mode, accuracy_score(y_true, y_pred)
+			print mode, accuracy_score(y_true, y_pred)
+			pprint(self.eval.computeFscores(self.data.testData, self.fe.labelenc.inverse_transform(y_pred)))
 
 	def buildSVC(self, feats, y_attribute, proba=False):
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
@@ -58,14 +62,13 @@ class StanceDetector:
 		
 		clf = SVC(probability=proba)
 		clf = clf.fit(X,y)
-		if prob:
+		if proba:
 			y_proba = clf.predict_proba(X_test)
 			return clf, y_proba
 		else:
 			y = clf.predict(X_test)
 			return clf, y
 		
-
 	def buildSeparate(self):
 		#builds two separate for topic and stance
 		topic_clf, y_topic_proba = self.buildSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',proba=True)
@@ -95,12 +98,19 @@ class StanceDetector:
 		print [(self.data.testLabels[i], pred_labels[i]) for i in range(len(stance_pred))]
 		score = accuracy_score(y_true_stance, stance_pred)
 		print score
+		pprint(self.eval.computeFscores(self.data.testData, pred_labels))
+
+
+	# def buildStacked(self):
+
+
+
 
 if __name__=='__main__':
 	sd = StanceDetector()
 	# sd.buildBaseline('bayes')
-	# sd.build('svm')
-	sd.buildSeparate()
+	sd.buildSimple('svm')
+	# sd.buildSeparate()
 
 
 
