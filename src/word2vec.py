@@ -12,6 +12,7 @@ class Word2Vec:
 		self.corpus_vector_file = 'word2vec_corpus.p'
 		self.positive_words_vector_file = 'positive_words_corpus.p'
 		self.negative_words_vector_file = 'negative_words_corpus.p'
+		self.subjectivity_vector_file = 'negative_words_corpus.p'
 		if not os.path.isfile(self.positive_words_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 			#self.buildVectorCorpus(corpus)
@@ -113,7 +114,23 @@ class Word2Vec:
 						# Handle key error while using the vector set
 						print 'Not found', word_key
 			print 'Built word2vec vectors for positive words'
-			pickle.dump(negative_vectors, open(self.positive_words_vector_file, "wb"))
+			pickle.dump(positive_vectors, open(self.positive_words_vector_file, "wb"))
+
+	# def getWord2VecSubjectivity(self):
+	# 	subjectivity_vectors = ()
+	# 	with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
+	# 		read_data = f.readlines()
+	# 		for line in read_data:
+	# 			parts = line.split()
+	# 			word = parts[2].split('=')[1]
+	# 			self.lex[word] = {}
+	# 			for p in parts:
+	# 				key,val = p.split('=')
+	# 				if key=='len' or key=='word1':
+	# 					continue
+	# 				else:
+	# 					self.lex[word][key] = val
+
 		
 
 
