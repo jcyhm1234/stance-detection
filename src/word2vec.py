@@ -36,11 +36,11 @@ class Word2Vec:
 
 	def getFeatureVectorsFromBinary(self, data):
 		size = 300
-		sum_vec = np.zeros(size).reshape((1, size))
+		sum_vec = np.zeros(size)
 		no_of_tokens = 0
 		for token in data:
 			try:
-				sum_vec += corpus_vectors[token].reshape((1, self.size))
+				sum_vec += corpus_vectors[token]
 				no_of_tokens += 1
 				type(sum_vec)
 			except:
@@ -54,15 +54,23 @@ class Word2Vec:
 	def buildVectorCorpus(self,corpus):
 		corpus_vectors = dict()
 		print 'Building corpus of word2vec vectors'
+		#corpus.pop()
+		#word_key = corpus.pop().encode('utf8').strip() 
+		#print type(word_key)
+		#vec = self.w[word_key]
+		#print vec
+		
 		for word in corpus:
-			try:
-				vec = self.w[word].reshape((1, self.size))
+			try:	
+				word_key = word.encode('utf8').strip()
+				vec = self.w[word_key]
+				print 'Found ', word_key
 				corpus_vectors[word] = vec
 			except:
 				# Handle key error while using the vector set
-				pass
+				print 'Not found', word_key
+		
 		print 'Built corpus word2vec vectors'
-		print len(corpus_vectors)
 		# Save this as a pickle file
 		pickle.dump( corpus_vectors, open( self.corpus_vector_file, "wb" ) )
 		
