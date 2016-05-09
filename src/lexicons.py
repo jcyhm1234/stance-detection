@@ -1,4 +1,3 @@
-
 class Lexicon:
 	def __init__(self):
 		self.lex = {}

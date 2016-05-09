@@ -10,9 +10,12 @@ import os
 class Word2Vec:
 	def __init__(self, corpus):
 		self.corpus_vector_file = 'word2vec_corpus.p'
-		if not os.path.isfile(self.corpus_vector_file):
+		self.positive_words_vector_file = 'positive_words_corpus.p'
+		self.negative_words_vector_file = 'negative_words_corpus.p'
+		if not os.path.isfile(self.positive_words_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
-			self.buildVectorCorpus(corpus)
+			#self.buildVectorCorpus(corpus)
+			self.getWord2VecFeaturesForLin()
 		#load the pickle file into a dictionary
 		self.corpus_vectors = pickle.load( open( self.corpus_vector_file, "rb" ) )
 		print 'loaded corpus vectors', len(self.corpus_vectors)
@@ -75,6 +78,42 @@ class Word2Vec:
 		print 'Built corpus word2vec vectors'
 		# Save this as a pickle file
 		pickle.dump( corpus_vectors, open( self.corpus_vector_file, "wb" ) )
+
+
+
+
+	def getWord2VecFeaturesForLin(self):
+		# Load the binary word2vec model
+		negative_vectors = dict()
+		positive_vectors = dict()
+		with open('../lexicons/liu/negative-words.txt', 'r') as f:
+			read_data = f.readlines()
+			for line in read_data:
+				lin = line.strip()
+				if lin and lin[0]!=';':
+					try:	
+						word_key = lin.encode('utf8').strip()
+						vec = self.w[word_key]
+						negative_vectors[word_key] = vec
+					except:
+						# Handle key error while using the vector set
+						print 'Not found', word_key
+			print 'Built word2vec vectors for negative words'
+			pickle.dump(negative_vectors, open(self.negative_words_vector_file, "wb"))
+		with open('../lexicons/liu/positive-words.txt', 'r') as f:
+			read_data = f.readlines()
+			for line in read_data:
+				lin = line.strip()
+				if lin and lin[0]!=';':
+					try:	
+						word_key = lin.encode('utf8').strip()
+						vec = self.w[word_key]
+						positive_vectors[word_key] = vec
+					except:
+						# Handle key error while using the vector set
+						print 'Not found', word_key
+			print 'Built word2vec vectors for positive words'
+			pickle.dump(negative_vectors, open(self.positive_words_vector_file, "wb"))
 		
 
 
