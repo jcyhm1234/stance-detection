@@ -15,7 +15,9 @@ class Word2Vec:
 		self.positive_sub_vector_file = 'positive_sub_corpus.p'
 		self.negative_sub_vector_file = 'negative_sub_corpus.p'
 		self.neutral_sub_vector_file = 'neutral_words_corpus.p'
-		if not os.path.isfile(self.positive_sub_vector_file):
+		self.strong_sub_vector_file = 'strong_sub_corpus.p'
+		self.weak_sub_vector_file = 'weak_sub_corpus.p'
+		if not os.path.isfile(self.strong_sub_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 			#self.buildVectorCorpus(corpus)
 			#self.getWord2VecFeaturesForLin()
@@ -127,9 +129,8 @@ class Word2Vec:
 		with open('../lexicons/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff', 'r') as f:
 			read_data = f.readlines()
 			lex = {}
-			positive_polarity = dict()
-			negative_polarity = dict()
-			neutral_polarity = dict()
+			strong_sub = dict()
+			weak_sub = dict()
 			for line in read_data:
 				parts = line.split()
 				word = parts[2].split('=')[1]
@@ -138,20 +139,18 @@ class Word2Vec:
 					vec = self.w[word_key]
 					for p in parts:
 						key,val = p.split('=')
-						if key=='priorpolarity':
-							if val == 'negative':
-								negative_polarity[word] = vec
-							elif val == 'positive':
-								positive_polarity[word] = vec
+						if key=='type':
+							if val == 'strongsubj':
+								strong_sub[word] = vec
 							else:
-								neutral_polarity[word] = vec
+								weak_sub[word] = vec
 				except:
 					# Handle key error while using the vector set
 					print 'Not found', word_key
 			print 'Generated subjectivity word vecs'
-			pickle.dump(positive_polarity, open(self.positive_sub_vector_file, "wb"))
-			pickle.dump(negative_polarity, open(self.negative_sub_vector_file, "wb"))
-			pickle.dump(neutral_polarity, open(self.neutral_sub_vector_file, "wb"))
+			pickle.dump(strong_sub, open(self.strong_sub_vector_file, "wb"))
+			pickle.dump(weak_sub, open(self.weak_sub_vector_file, "wb"))
+			
 				
 if __name__=='__main__':
 	w = Word2Vec()
