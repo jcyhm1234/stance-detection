@@ -2,6 +2,7 @@
 # Word2Vec usage in this 
 	# Entire document word2vec classification 
 # Are we training with the target ? for the normal classifiers  ?
+# introduce gridsearch
 
 Models to build
 1. Single SVM with these features
@@ -26,4 +27,4 @@ Models to build
 
 4. Use top words for each topic, as additional features to predict topic
 5. Use top ngrams for each topic, encode into vfectors
-
+6. train separate model for each topic

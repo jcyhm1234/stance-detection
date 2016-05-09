@@ -1,0 +1,15 @@
+OLD
+---
+Atheism 0.677272727273
+Climate Change is a Real Concern 0.639053254438
+Feminist Movement 0.466666666667
+Hillary Clinton 0.583050847458
+Legalization of Abortion 0.614285714286
+
+NEW - uses negative samples also
+----
+Atheism 0.770454545455
+Climate Change is a Real Concern 0.745562130178
+Feminist Movement 0.763157894737
+Hillary Clinton 0.767796610169
+Legalization of Abortion 0.771428571429

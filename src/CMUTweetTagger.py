@@ -41,7 +41,8 @@ def _call_runtagger(tweets, run_tagger_cmd=RUN_TAGGER_CMD):
 
     # force UTF-8 encoding (from internal unicode type) to avoid .communicate encoding error as per:
     # http://stackoverflow.com/questions/3040101/python-encoding-for-pipe-communicate
-    message = message.encode('utf-8')
+    message = ''.join(i for i in tw if ord(i)<128)
+    # message = message.encode('utf-8')
 
     # build a list of args
     args = shlex.split(run_tagger_cmd)

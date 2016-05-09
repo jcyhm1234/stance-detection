@@ -39,6 +39,7 @@ class StanceDetector:
 			print mode, accuracy_score(y_true, y_pred)
 			pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+
 	def buildSimple(self, model):
 		print 'Training NB '
 		feats = ['words','lexiconsbyword','topic']
@@ -60,6 +61,7 @@ class StanceDetector:
 			print mode, accuracy_score(y_true, y_pred)
 			pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+	#train in name means helper function
 	def trainSVC(self, feats, y_attribute, proba=False):
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
@@ -121,7 +123,44 @@ class StanceDetector:
 		print score
 		pprint(self.eval.computeFscores(self.data.testTweets, stance_pred_labels))
 
-	#train in name means helper function
+	def buildTopicOnlyMultiple(self):
+		#one svm for each topic
+		feats = ['words']
+		y_attribute = 'topic'
+		clf_topic = {}
+		for topic in list(self.fe.topicenc.classes_):
+			X,y = self.fe.getFeaturesTopicNontopic('train',feats,y_attribute, topic)
+			# Xt,yt = self.fe.getFeaturesTopicNontopic('test',feats,y_attribute, topic)
+			clf = LinearSVC()
+			clf = clf.fit(X,y)
+			clf_topic[topic] = clf
+			print topic, clf.score(Xt,yt)
+
+		# not useful. still less than single SVM. but not as much as avg of above
+
+		# X_whole,y_whole = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		# Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		# newX = []
+		# newXt = []
+		# for topic in clf_topic:
+		# 	newX.append(clf_topic[topic].transform(X_whole))
+		# 	newXt.append(clf_topic[topic].transform(Xt))
+		# newX = np.concatenate(tuple(newX),axis=1)
+		# newXt = np.concatenate(tuple(newXt),axis=1)
+		# newclf = LinearSVC()
+		# newclf = newclf.fit(newX, y_whole)
+		# print newclf.score(newXt, yt)
+			
+	def buildTopicOnlySingle(self):
+		feats = ['words']
+		y_attribute = 'topic'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC()
+		clf = clf.fit(X,y)
+		print clf.score(Xt,yt)
+		print clf.class_log_prior_
+
 	def trainTopicSVM(self, topic):
 		feats = ['words','lexiconsbyword','topic']
 		y_attribute = 'stance'
@@ -133,7 +172,8 @@ class StanceDetector:
 
 		print clf.score(X_test, y_true)
 		return clf
-
+	
+	#shit
 	def buildTopicWise(self):
 		#separate SVC for each topic, tests on that class only first, then on all
 		topic_clf = {}
@@ -160,12 +200,29 @@ class StanceDetector:
 		print accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+
+	#GOOD 66%acc
+	#1.2 % increase with change topic to 1hot
+	def buildSVMWord2Vec(self):
+		feats = ['words2vec','topic1hot','pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
 if __name__=='__main__':
 	sd = StanceDetector()
 	# sd.buildBaseline('bayes')
 	# sd.buildSimple('svm')
-	sd.buildTopicStanceSeparate()
+	# sd.buildTopicStanceSeparate()
 	# sd.buildTopicWise()
+	sd.buildSVMWord2Vec()
+	# sd.buildTopicOnlyIndiv()
+	# sd.buildTopicOnlySingle()
 
 
 

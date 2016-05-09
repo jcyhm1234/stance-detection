@@ -1,0 +1,41 @@
+NB
+Training baseline...
+Training done
+Testing...
+0.492331288344
+Most Informative Features
+      contains(#hillary) = True           AGAINS : NONE   =     29.1 : 1.0
+                   topic = 'Climate Change is a Real Concern'  FAVOR : AGAINS =     25.4 : 1.0
+       contains(climate) = True            FAVOR : NONE   =     22.7 : 1.0
+         contains(#gate) = True           AGAINS : FAVOR  =     18.5 : 1.0
+        contains(#gamer) = True           AGAINS : FAVOR  =     18.5 : 1.0
+          contains(#god) = True           AGAINS : FAVOR  =     16.4 : 1.0
+      contains(abortion) = True           AGAINS : NONE   =     15.1 : 1.0
+         contains(#life) = True           AGAINS : FAVOR  =     14.2 : 1.0
+          contains(week) = True             NONE : AGAINS =     12.7 : 1.0
+      contains(#america) = True           AGAINS : FAVOR  =     12.1 : 1.0
+        contains(health) = True            FAVOR : AGAINS =     11.7 : 1.0
+          contains(guys) = True             NONE : AGAINS =     11.5 : 1.0
+         contains(women) = True            FAVOR : NONE   =     11.2 : 1.0
+          contains(#not) = True           AGAINS : NONE   =     10.4 : 1.0
+      contains(feminist) = True           AGAINS : NONE   =      9.8 : 1.0
+         contains(jesus) = True           AGAINS : FAVOR  =      9.5 : 1.0
+          contains(#pro) = True           AGAINS : FAVOR  =      9.5 : 1.0
+     contains(#marriage) = True             NONE : AGAINS =      9.5 : 1.0
+           contains(co2) = True            FAVOR : AGAINS =      9.3 : 1.0
+        contains(summer) = True            FAVOR : AGAINS =      9.3 : 1.0
+          contains(home) = True            FAVOR : AGAINS =      9.3 : 1.0
+       contains(clinton) = True            FAVOR : NONE   =      9.2 : 1.0
+          contains(#yes) = True            FAVOR : NONE   =      9.2 : 1.0
+         contains(green) = True            FAVOR : AGAINS =      8.0 : 1.0
+      contains(#fellows) = True             NONE : AGAINS =      7.9 : 1.0
+       contains(supreme) = True             NONE : AGAINS =      7.9 : 1.0
+          contains(name) = True           AGAINS : NONE   =      7.9 : 1.0
+    contains(#baltimore) = True             NONE : FAVOR  =      7.5 : 1.0
+        contains(#women) = True            FAVOR : NONE   =      7.5 : 1.0
+      contains(campaign) = True            FAVOR : NONE   =      7.1 : 1.0
+None
+
+
+SVM
+0.47

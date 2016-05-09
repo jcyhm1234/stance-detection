@@ -32,15 +32,16 @@ class DataManager:
 		# remove the header from the data
 		self.trainData.pop(0)
 		self.testData.pop(0)
-		print 'Loaded %s training samples' % len(self.trainData),'and %s testing samples'%  len(self.testData)
+		# print 'Loaded %s training samples' % len(self.trainData),'and %s testing samples'%  len(self.testData)
 	
 	def loadStopwords(self):
 		with open('../lexicons/stopwords.txt','r') as f:
 			self.stopwords = set([row for row in f.read().splitlines()])
 
 	def preprocess(self):
-		self.trainTweetsText = [self.tweetPreprocess(row[0]) for row in self.trainData]
-		self.testTweetsText = [self.tweetPreprocess(row[0]) for row in self.testData if row[1]!='Donald Trump']
+		#this does no preprocessing. actual tweets, used for POS tagging
+		self.trainTweetsText = [row[0] for row in self.trainData]
+		self.testTweetsText = [row[0] for row in self.testData if row[1]!='Donald Trump']
 		
 		self.trainTopics = [row[1] for row in self.trainData]
 		self.testTopics = [row[1] for row in self.testData if row[1]!='Donald Trump']

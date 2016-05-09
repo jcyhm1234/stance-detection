@@ -1,0 +1,35 @@
+with POS
+0.610088070456
+{'AGAINST': {'f-score:': 0.7328, 'precision:': 0.713, 'recall:': 0.7538},
+ 'FAVOR': {'f-score:': 0.4848, 'precision:': 0.5292, 'recall:': 0.4474},
+ 'Macro': 0.6088}
+
+without POS
+0.611689351481
+{'AGAINST': {'f-score:': 0.7346, 'precision:': 0.7137, 'recall:': 0.7566},
+ 'FAVOR': {'f-score:': 0.4866, 'precision:': 0.5333, 'recall:': 0.4474},
+ 'Macro': 0.6106}
+ 
+using multi_class='crammer_singer'
+0.614091273018
+{'AGAINST': {'f-score:': 0.7348, 'precision:': 0.7117, 'recall:': 0.7594},
+ 'FAVOR': {'f-score:': 0.4926, 'precision:': 0.5583, 'recall:': 0.4408},
+ 'Macro': 0.6137}
+
+using penalty='l1',dual=False
+ 0.619695756605
+{'AGAINST': {'f-score:': 0.7466, 'precision:': 0.7204, 'recall:': 0.7748},
+ 'FAVOR': {'f-score:': 0.4875, 'precision:': 0.5354, 'recall:': 0.4474},
+ 'Macro': 0.617}
+
+C=0.01
+ 0.670136108887
+{'AGAINST': {'f-score:': 0.7857, 'precision:': 0.6693, 'recall:': 0.951},
+ 'FAVOR': {'f-score:': 0.5076, 'precision:': 0.7452, 'recall:': 0.3849},
+ 'Macro': 0.6466}
+
+C=0.01,penalty='l1',dual=False
+ 0.662129703763
+{'AGAINST': {'f-score:': 0.7844, 'precision:': 0.6519, 'recall:': 0.9846},
+ 'FAVOR': {'f-score:': 0.5201, 'precision:': 0.7278, 'recall:': 0.4046},
+ 'Macro': 0.6522}

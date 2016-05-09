@@ -1,3 +1,4 @@
+from __future__ import division
 from gensim import models
 from numpy import array
 from scipy.cluster.vq import kmeans2
@@ -6,51 +7,55 @@ import json
 import numpy as np
 import pickle
 import os
-
 class Word2Vec:
-	def __init__(self, corpus):
+	def __init__(self, corpus=None):
 		self.corpus_vector_file = 'word2vec_corpus.p'
 		if not os.path.isfile(self.corpus_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 			self.buildVectorCorpus(corpus)
 		#load the pickle file into a dictionary
 		self.corpus_vectors = pickle.load( open( self.corpus_vector_file, "rb" ) )
-		print 'loaded corpus vectors', len(self.corpus_vectors)
+		# print 'loaded corpus vectors', len(self.corpus_vectors)
+		assert(len(self.corpus_vectors)==7796)
 		self.size = 300
 
-	def getFeatureVectors(self, data):
-		size = 300
-		sum_vec = np.zeros(size).reshape((1, size))
-		no_of_tokens = 0
-		for token in data:
-			try:
-				sum_vec += w[token].reshape((1, size))
-				no_of_tokens += 1
-				type(sum_vec)
-			except:
-				sum_vec = sum_vec + 0
-		if no_of_tokens != 0:
-			sum_vec = sum_vec / no_of_tokens
-			#print 'test'
-		print 'Word2Vec feature vector', sum_vec 
-		return sum_vec
+	# def getFeatureVectors(self, data):
+	# 	size = 300
+	# 	sum_vec = np.zeros(size).reshape((1, size))
+	# 	no_of_tokens = 0
+	# 	for token in data:
+	# 		try:
+	# 			sum_vec += w[token].reshape((1, size))
+	# 			no_of_tokens += 1
+	# 			type(sum_vec)
+	# 		except:
+	# 			sum_vec = sum_vec + 0
+	# 	if no_of_tokens != 0:
+	# 		sum_vec = sum_vec / no_of_tokens
+	# 		#print 'test'
+	# 	print 'Word2Vec feature vector', sum_vec 
+	# 	return sum_vec
 
 	def getFeatureVectorsFromBinary(self, data):
 		size = 300
 		sum_vec = np.zeros(size)
 		no_of_tokens = 0
 		for token in data:
-			#print 'Token', token
 			try:
 				sum_vec += self.corpus_vectors[token]
 				no_of_tokens += 1
-				type(sum_vec)
-			except:
-				sum_vec = sum_vec + 0
+			except KeyError:
+				try:
+			 		#to handle hashtags, again search after removing hash
+					if token[1:]:
+						sum_vec += self.corpus_vectors[token[1:]]
+						no_of_tokens += 1
+				except:
+					sum_vec = sum_vec + 0
+			# type(sum_vec)
+			# except:
 		if no_of_tokens != 0:
 			sum_vec = sum_vec / no_of_tokens
-			#print 'test'
-		print 'Word2Vec feature vector', sum_vec 
 		return sum_vec
 
 	def buildVectorCorpus(self,corpus):
@@ -80,4 +85,6 @@ class Word2Vec:
 
 
 
+if __name__=='__main__':
 
+	w = Word2Vec()
