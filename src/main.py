@@ -5,9 +5,13 @@ from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 from evaluate import Evaluate
 from pprint import pprint
+import numpy as np
+from sklearn import tree
+
 class StanceDetector:
 	def __init__(self):
 		self.data = DataManager('../data/train.csv','../data/test.csv')
@@ -27,13 +31,13 @@ class StanceDetector:
 				cl = LinearSVC()
 
 			if mode=='tfidf':
-				X = TfidfTransformer().fit_transform(X).toarray()
-				X_test = TfidfTransformer().fit_transform(X_test).toarray()
-			
+				cl = Pipeline([('tfidf', TfidfTransformer()),
+                      ('clf', cl), ])
+
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
 			print mode, accuracy_score(y_true, y_pred)
-			pprint(self.eval.computeFscores(self.data.testData, self.fe.labelenc.inverse_transform(y_pred)))
+			pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
 	def buildSimple(self, model):
 		print 'Training NB '
@@ -48,15 +52,15 @@ class StanceDetector:
 				cl = LinearSVC()
 
 			if mode=='tfidf':
-				X = TfidfTransformer().fit_transform(X).toarray()
-				X_test = TfidfTransformer().fit_transform(X_test).toarray()
+				cl = Pipeline([('tfidf', TfidfTransformer()),
+                      ('clf', cl), ])
 			
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
 			print mode, accuracy_score(y_true, y_pred)
-			pprint(self.eval.computeFscores(self.data.testData, self.fe.labelenc.inverse_transform(y_pred)))
+			pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
-	def buildSVC(self, feats, y_attribute, proba=False):
+	def trainSVC(self, feats, y_attribute, proba=False):
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 		
@@ -66,12 +70,29 @@ class StanceDetector:
 			y_proba = clf.predict_proba(X_test)
 			return clf, y_proba
 		else:
-			y = clf.predict(X_test)
-			return clf, y
+			y_pr = clf.predict(X_test)
+			return clf, y_pr
+	
+	def trainLinearSVC(self, feats, y_attribute, dec=False):
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 		
-	def buildSeparate(self):
+		clf = LinearSVC()
+		clf = clf.fit(X,y)
+		if dec:
+			y_pr = clf.decision_function(X_test)
+			return clf, y_pr
+		else:
+			y_pr = clf.predict(X_test)
+			return clf, y_pr
+
+	def buildTopicStanceSeparate(self):
+		feats = ['words']
+		y_attribute = 'stance'
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+
 		#builds two separate for topic and stance
-		topic_clf, y_topic_proba = self.buildSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',proba=True)
+		topic_clf, y_topic_proba = self.trainLinearSVC(feats = ['words','lexiconsbyword'],y_attribute = 'topic',dec=True)
 		
 		boost_factors = np.ones_like(y_true)
 		#multiply by NONE (0) = 0
@@ -85,7 +106,7 @@ class StanceDetector:
 			if prob < 0.4:
 				boost_factors[ind] = 0 #corresponds to NONE
 		
-		stance_clf,stance_pred = self.buildSVC(feats = ['words','lexiconsbyword','topic'],y_attribute = 'stance')		
+		stance_clf,stance_pred = self.trainLinearSVC(feats = ['words','lexiconsbyword','topic'],y_attribute = 'stance')		
 		
 		# for i in range(0, len(stance_pred)):
 		# 	if boost_factors[i] == 2:
@@ -95,22 +116,57 @@ class StanceDetector:
 		stance_pred = np.multiply(stance_pred, boost_factors)
 		stance_pred_labels = self.fe.labelenc.inverse_transform(stance_pred)
 
-		print [(self.data.testLabels[i], pred_labels[i]) for i in range(len(stance_pred))]
-		score = accuracy_score(y_true_stance, stance_pred)
+		# print [(self.data.testLabels[i], stance_pred_labels[i]) for i in range(len(stance_pred))]
+		score = accuracy_score(y_true, stance_pred)
 		print score
-		pprint(self.eval.computeFscores(self.data.testData, pred_labels))
+		pprint(self.eval.computeFscores(self.data.testTweets, stance_pred_labels))
 
+	#train in name means helper function
+	def trainTopicSVM(self, topic):
+		feats = ['words','lexiconsbyword','topic']
+		y_attribute = 'stance'
+		
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute, topic=topic)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute, topic=topic)
+		clf = LinearSVC()
+		clf = clf.fit(X,y)
 
-	# def buildStacked(self):
+		print clf.score(X_test, y_true)
+		return clf
 
+	def buildTopicWise(self):
+		#separate SVC for each topic, tests on that class only first, then on all
+		topic_clf = {}
+		feats = ['words','lexiconsbyword','topic']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 
+		#X matrix for new classifier which uses this as train matrix
+		#has columns of each topic classifier's confidence function
+		X_fx = []
+		X_ftestx = []
+		for topic in list(self.fe.topicenc.classes_):
+			print topic,
+			topic_clf[topic] = self.trainTopicSVM(topic)
+			X_fx.append(topic_clf[topic].decision_function(X))
+			X_ftestx.append(topic_clf[topic].decision_function(X_test))
 
+		X_fx = np.concatenate(tuple(X_fx), axis=1)
+		X_ftestx = np.concatenate(tuple(X_ftestx), axis=1)
+
+		clf = LinearSVC().fit(X_fx, y)
+		y_pred = clf.predict(X_ftestx)
+		print accuracy_score(y_true, y_pred)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
 if __name__=='__main__':
 	sd = StanceDetector()
 	# sd.buildBaseline('bayes')
-	sd.buildSimple('svm')
-	# sd.buildSeparate()
+	# sd.buildSimple('svm')
+	sd.buildTopicStanceSeparate()
+	# sd.buildTopicWise()
+
 
 
 

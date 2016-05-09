@@ -1,8 +1,29 @@
-# Will training different for each feature SVM's help ?
 # N-Grams 
-# Combining predictions from different classifiers 
-# Train a classifier for each target ? 
 # Word2Vec usage in this 
 	# Entire document word2vec classification 
 # Are we training with the target ? for the normal classifiers  ?
+
+Models to build
+1. Single SVM with these features
+	a. embedding + distanceFromClusters_polarity + distanceFromClusters_subj + distanceFromClusters_sentiment + PosTags_count + OneHotVectorTopics + embeddings_topX_ESA_words
+
+	b. embedding + distanceFromClusters_polarity + distanceFromClusters_subj + distanceFromClusters_sentiment + PosTags_count + learntProbabilityOfTopics + embeddings_topX_ESA_words
+		learntProbabilityOfTopics uses one SVM without subj,polarity,senti,pos
+		should handle NONE better
+
+2. SVM_1: trained on all tweets
+	'Stance' vs 'NONE'
+		threshold
+			None
+
+	SVM_2: trained on tweets with FAVOR/AGAINST only
+		FAVOR vs AGAINST
+
+3. Each of SVM1 and SVM2 composed of below
+		Separate SVM for each individual featureGroup	
+						ex: POStags, Punctuation, Embeddings, Senti+Subj+Pol(?)
+		Another SVM to merge results of above
+
+4. Use top words for each topic, as additional features to predict topic
+5. Use top ngrams for each topic, encode into vfectors
 
