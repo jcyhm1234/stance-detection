@@ -220,10 +220,23 @@ class StanceDetector:
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
+	def buildSVMTrial(self):
+		feats = ['pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
+
 	def buildSVMGlove(self):
 		feats = ['glove','topic1hot','pos']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
 		clf = clf.fit(X,y)
@@ -303,6 +316,9 @@ class StanceDetector:
 		print 'Boosted', accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 		
+	
+
+
 
 if __name__=='__main__':
 	sd = StanceDetector()
@@ -317,8 +333,9 @@ if __name__=='__main__':
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
 	# sd.buildModel2()
-	sd.buildSVMWord2VecWithClusters()
+	# sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
+	sd.buildSVMTrial()
 
 
 
