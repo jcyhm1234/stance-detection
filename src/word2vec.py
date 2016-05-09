@@ -8,11 +8,11 @@ import pickle
 import os
 
 class Word2Vec:
-	def __init__(self):
+	def __init__(self, corpus):
 		self.corpus_vector_file = 'word2vec_corpus.p'
 		if not os.path.isfile(self.corpus_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
-			self.buildVectorCorpus()
+			self.buildVectorCorpus(corpus)
 		#load the pickle file into a dictionary
 		self.corpus_vectors = pickle.load( open( self.corpus_vector_file, "rb" ) )
 		self.size = 300

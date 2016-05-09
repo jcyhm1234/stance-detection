@@ -15,7 +15,7 @@ class FeatureExtractor:
 		self.liu = LiuLexicon()
 		self.subj = SubjLexicon()
 		self.buildTweetCorpus()
-		self.word_vec_model = Word2Vec()
+		self.word_vec_model = Word2Vec(self.corpus)
 		self.initEncoders()
 
 
