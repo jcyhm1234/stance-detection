@@ -15,6 +15,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 from sklearn.ensemble import AdaBoostClassifier
+import xgboost as xgb
 
 class StanceDetector:
 	def __init__(self):
@@ -317,10 +318,39 @@ class StanceDetector:
 			y_pred[loc] = self.fe.labelenc.transform('NONE')
 		print 'Boosted', accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
-		
-	
 
+	def runXGBoostModel(model, model_name, X, target, X_test, crossOn):
+	    print "Trying to fit model"
+	    print X.shape, target.shape
+	    model.fit(X, target)
+	    print "Successfully fit model"
+	    predicted = get_proba_one(model, X)
+	    predicted_test = get_proba_one(model, X_test)
+	    print predicted_test
+	    return predicted_test
 
+	def word2VecXGBoost():
+		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons']
+		#feats = ['clusteredLexicons']
+		#feats = ['pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		print (X.shape)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		#clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		#clf = clf.fit(X,y)
+		#y_pred = clf.predict(Xt)
+		# f = open('pred','w')
+		# for i in y_pred:
+		# 	#print type(i)
+		# 	f.write('{0}'.format(i))
+		# f.close()
+		#print clf.score(Xt, yt)
+		#pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		m2_xgb = xgb.XGBClassifier(n_estimators=110, nthread=-1, max_depth = 4, seed=1729)
+		print "Run Model"
+		y_pred = runModel(m2_xgb, "m2_xgb_OS_ENN", x_train_OS, y_train_OS, x_test, True)
+		print accuracy_score(y_t, y_pred)
 
 if __name__=='__main__':
 	sd = StanceDetector()
