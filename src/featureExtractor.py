@@ -23,6 +23,8 @@ class FeatureExtractor:
 		self.clusters = Cluster(100)
 		self.initEncoders()
 
+		self.collectTopUnigrams()
+
 	def buildTweetCorpus(self):
 		self.corpus = []
 		for dataset in [self.data.trainTweets, self.data.testTweets]:
@@ -31,7 +33,24 @@ class FeatureExtractor:
 				self.corpus.extend(words)
 		self.corpus = set(self.corpus)
 		# print 'Built corpus'
-		
+	
+	def collectTopUnigrams(self):
+		self.counts = {}
+		for dataset in [self.data.trainTweets, self.data.testTweets]:
+			for sample in dataset:
+				for w in sample[0]:
+					if w in self.counts:
+						self.counts[w] +=1
+					else:
+						self.counts[w] = 1
+
+		sorted_x = sorted(self.counts.items(), key=operator.itemgetter(1))
+		self.topunigrams = {}
+		i = 0
+		for x in sorted_x[:-500]:
+			self.topunigrams[x[0]] = i
+			i+=1
+
 	def initEncoders(self):
 		self.topicenc = preprocessing.LabelEncoder()
 		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Hillary Clinton", "Legalization of Abortion"])
@@ -253,6 +272,15 @@ class FeatureExtractor:
 				for vecsi in vecs:
 					#print 'Adding ', np.asarray(vecsi).shape
 					features.append(np.asarray(vecsi))
+
+			elif feat=='top1grams':
+				vec = np.zeros((len(dataset),len(self.topunigrams)))
+				for count, tweet in enumerate(dataset):
+					for word in tweet[0]:
+						if word in self.topunigrams:
+							vec[count][self.topunigrams[word]] += 1
+				features.append(vec)
+
 			else:
 				print 'Feature not recognized'
 		print 'Final Feature set size:', len(features)

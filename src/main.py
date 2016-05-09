@@ -12,6 +12,9 @@ from pprint import pprint
 import numpy as np
 from sklearn import tree
 from sklearn.grid_search import GridSearchCV
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.decomposition import PCA
+from sklearn.ensemble import AdaBoostClassifier
 
 class StanceDetector:
 	def __init__(self):
@@ -156,16 +159,6 @@ class StanceDetector:
 		# newclf = LinearSVC()
 		# newclf = newclf.fit(newX, y_whole)
 		# print newclf.score(newXt, yt)
-			
-	def buildTopicOnlySingle(self):
-		feats = ['words']
-		y_attribute = 'topic'
-		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
-		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
-		clf = LinearSVC()
-		clf = clf.fit(X,y)
-		print clf.score(Xt,yt)
-		print clf.class_log_prior_
 
 	def trainTopicSVM(self, topic):
 		feats = ['words','lexiconsbyword','topic']
@@ -220,16 +213,28 @@ class StanceDetector:
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
-	def buildSVMGlove(self):
-		feats = ['glove','topic1hot','pos']
+	def buildSVMTrial(self):
+		feats = ['topic1hot','words2vec']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
-		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
-		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)		
+		clf = LinearSVC(C=0.001)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
 		print clf.score(Xt, yt)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+	
+	def buildTrial(self):
+		feats = ['words2vec','pos','clusteredLexicons']
+		y_attribute = 'topic'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)		
+		clf = LinearSVC(C=0.01)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		print clf.score(Xt, yt)
+		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
 
 	def getGridSearchParams(self):
 		param_grid = [
@@ -313,6 +318,9 @@ class StanceDetector:
 		print 'Boosted', accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 		
+	
+
+
 
 if __name__=='__main__':
 	sd = StanceDetector()
@@ -327,8 +335,9 @@ if __name__=='__main__':
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
 	# sd.buildModel2()
-	sd.buildSVMWord2VecWithClusters()
+	# sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
+	sd.buildTrial()
 
 
 
