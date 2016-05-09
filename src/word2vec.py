@@ -7,15 +7,15 @@ import numpy as np
 
 class Word2Vec:
 	def __init__(self):
-		self.w = models.Word2Vec.load_word2vec_format('/Users/asvenk/Vision/word2vec/trunk/GoogleNews-vectors-negative300.bin', binary=True) 
+		self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 
 	def getFeatureVectors(self, data):
 		size = 300
 		sum_vec = np.zeros(size).reshape((1, size))
 		no_of_tokens = 0
-		for token in tweet:
+		for token in data:
 			try:
-				sum_vec += w[a_w].reshape((1, size))
+				sum_vec += w[token].reshape((1, size))
 				no_of_tokens += 1
 				type(sum_vec)
 			except:
