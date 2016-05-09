@@ -7,16 +7,18 @@ import json
 import numpy as np
 import pickle
 import os
+
 class Word2Vec:
 	def __init__(self, corpus=None):
-		self.corpus_vector_file = 'word2vec_corpus.p'
-		self.positive_words_vector_file = 'positive_words_corpus.p'
-		self.negative_words_vector_file = 'negative_words_corpus.p'
-		self.positive_sub_vector_file = 'positive_sub_corpus.p'
-		self.negative_sub_vector_file = 'negative_sub_corpus.p'
-		self.neutral_sub_vector_file = 'neutral_words_corpus.p'
-		self.strong_sub_vector_file = 'strong_sub_corpus.p'
-		self.weak_sub_vector_file = 'weak_sub_corpus.p'
+		self.corpus_vector_file = '../data/pickle/word2vec_corpus.p'
+		self.positive_words_vector_file = '../data/pickle/positive_words_corpus.p'
+		self.negative_words_vector_file = '../data/pickle/negative_words_corpus.p'
+		self.positive_sub_vector_file = '../data/pickle/positive_sub_corpus.p'
+		self.negative_sub_vector_file = '../data/pickle/negative_sub_corpus.p'
+		self.neutral_sub_vector_file = '../data/pickle/neutral_words_corpus.p'
+		self.strong_sub_vector_file = '../data/pickle/strong_sub_corpus.p'
+		self.weak_sub_vector_file = '../data/pickle/weak_sub_corpus.p'
+		
 		if not os.path.isfile(self.strong_sub_vector_file):
 			self.w = models.Word2Vec.load_word2vec_format('../data/GoogleNews-vectors-negative300.bin', binary=True) 
 			#self.buildVectorCorpus(corpus)
@@ -44,6 +46,12 @@ class Word2Vec:
 	# 		#print 'test'
 	# 	print 'Word2Vec feature vector', sum_vec 
 	# 	return sum_vec
+	def getVectorForWord(self, word):
+		if word in self.corpus_vectors:
+			return self.corpus_vectors[word]
+		else:
+			return None
+
 
 	def getFeatureVectorsFromBinary(self, data):
 		size = 300

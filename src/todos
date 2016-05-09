@@ -1,6 +1,5 @@
 # N-Grams 
-# Word2Vec usage in this 
-	# Entire document word2vec classification 
+# Entire document word2vec classification 
 # Are we training with the target ? for the normal classifiers  ?
 # introduce gridsearch
 

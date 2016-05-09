@@ -8,6 +8,9 @@ from sklearn import preprocessing
 from lexicons import SubjLexicon, LiuLexicon
 from dataManager import DataManager
 from random import shuffle
+from glove import Glove
+from clusterVectors import Cluster
+
 class FeatureExtractor:
 	def __init__(self, data):
 		self.data = data
@@ -16,6 +19,8 @@ class FeatureExtractor:
 		self.subj = SubjLexicon()
 		self.buildTweetCorpus()
 		self.word_vec_model = Word2Vec(self.corpus)
+		self.glove_vec_model = Glove(100, self.corpus)
+		self.clusters = Cluster(100)
 		self.initEncoders()
 
 	def buildTweetCorpus(self):
@@ -71,6 +76,13 @@ class FeatureExtractor:
 
 	def getWord2Vec(self, tweetwords):
 		return self.word_vec_model.getFeatureVectorsFromBinary(tweetwords)
+
+	def getWords2Vectors(self, tweetwords):
+		#returns vector for each tweetword
+		rval = []
+		for word in tweetwords:
+			rval.append(self.word_vec_model.getVectorForWord(word))
+		return rval
 
 	def getPOSTags(self, tweets):
 		tagtuples = runtagger_parse(tweets)
@@ -206,9 +218,40 @@ class FeatureExtractor:
 					vecs.append(self.getWord2Vec(tweet[0]))
 				features.append(np.asarray(vecs))
 
-			# elif feat=='topunigrams':
+			elif feat=='glove':
+				vecs = []
+				for tweet in dataset:
+					vecs.append(self.glove_vec_model.getVecOfTweet(tweet[0]))
+				features.append(np.asarray(vecs))
+			
+			elif feat=='polarity':
+				vecs = []
+				for tweet in dataset:
+					vecs.append(self.clusters.getPolarity(self.getWords2Vectors(tweet[0])))
+				features.append(np.asarray(vecs))
+			
+			elif feat=='subjectivity':
+				vecs = []
+				for tweet in dataset:
+					vecs.append(self.clusters.getSubjectivity(self.getWords2Vectors(tweet[0])))
+				features.append(np.asarray(vecs))
 
+			elif feat=='sentiment':
+				vecs = []
+				for tweet in dataset:
+					vecs.append(self.clusters.getSentiment(self.getWords2Vectors(tweet[0])))
+				features.append(np.asarray(vecs))
 
+			elif feat=='clusteredLexicons':
+				vecs = [[],[],[]]
+				for tweet in dataset:
+					wordsAsVecs = self.getWords2Vectors(tweet[0])
+					vecs[0].append(self.clusters.getSentiment(wordsAsVecs))
+					vecs[1].append(self.clusters.getSubjectivity(wordsAsVecs))
+					vecs[2].append(self.clusters.getPolarity(wordsAsVecs))
+				# allvecs = np.concatenate(tuple(vecs))
+				for vecsi in vecs:
+					features.append(np.asarray(vecsi))
 			else:
 				print 'Feature not recognized'
 		features = np.concatenate(tuple(features), axis=1)

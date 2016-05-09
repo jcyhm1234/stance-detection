@@ -1,0 +1,6 @@
+feats = ['words2vec','topic1hot','pos', 'clusteredLexicons']
+{'penalty': 'l1', 'C': 0.01, 'dual': False}
+0.662129703763
+{'AGAINST': {'f-score:': 0.7844, 'precision:': 0.6519, 'recall:': 0.9846},
+ 'FAVOR': {'f-score:': 0.5201, 'precision:': 0.7278, 'recall:': 0.4046},
+ 'Macro': 0.6522}
