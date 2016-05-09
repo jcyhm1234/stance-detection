@@ -1,2 +1,3 @@
 *.pyc
 rsyn.sh
+output/tmp*
