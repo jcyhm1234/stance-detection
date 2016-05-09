@@ -23,22 +23,22 @@ class Word2Vec:
 		print 'loaded corpus vectors', len(self.corpus_vectors)
 		self.size = 300
 
-	def getFeatureVectors(self, data):
-		size = 300
-		sum_vec = np.zeros(size).reshape((1, size))
-		no_of_tokens = 0
-		for token in data:
-			try:
-				sum_vec += w[token].reshape((1, size))
-				no_of_tokens += 1
-				type(sum_vec)
-			except:
-				sum_vec = sum_vec + 0
-		if no_of_tokens != 0:
-			sum_vec = sum_vec / no_of_tokens
-			#print 'test'
-		print 'Word2Vec feature vector', sum_vec 
-		return sum_vec
+	# def getFeatureVectors(self, data):
+	# 	size = 300
+	# 	sum_vec = np.zeros(size).reshape((1, size))
+	# 	no_of_tokens = 0
+	# 	for token in data:
+	# 		try:
+	# 			sum_vec += w[token].reshape((1, size))
+	# 			no_of_tokens += 1
+	# 			type(sum_vec)
+	# 		except:
+	# 			sum_vec = sum_vec + 0
+	# 	if no_of_tokens != 0:
+	# 		sum_vec = sum_vec / no_of_tokens
+	# 		#print 'test'
+	# 	print 'Word2Vec feature vector', sum_vec 
+	# 	return sum_vec
 
 	def getFeatureVectorsFromBinary(self, data):
 		size = 300
