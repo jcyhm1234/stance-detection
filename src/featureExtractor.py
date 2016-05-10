@@ -10,6 +10,7 @@ from dataManager import DataManager
 from random import shuffle
 from glove import Glove
 from clusterVectors import Cluster
+from itertools import tee, izip
 
 class FeatureExtractor:
 	def __init__(self, data):
@@ -24,6 +25,7 @@ class FeatureExtractor:
 		self.initEncoders()
 
 		self.collectTopUnigrams()
+		self.collectTopBigrams()
 
 	def buildTweetCorpus(self):
 		self.corpus = []
@@ -50,6 +52,32 @@ class FeatureExtractor:
 		for x in sorted_x[:-500]:
 			self.topunigrams[x[0]] = i
 			i+=1
+
+	def pairwise(self, iterable):
+	    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+	    a, b = tee(iterable)
+	    next(b, None)
+	    return izip(a, b)
+
+	def collectTopBigrams(self):
+		self.bigramCounts = {}
+		for dataset in [self.data.trainTweets, self.data.testTweets]:
+			for sample in dataset:
+				for u, w in self.pairwise(sample[0]):
+					#print u, w
+					if (u,w) in self.bigramCounts:
+						self.bigramCounts[(u,w)] +=1
+					else:
+						#print 'Duplicate of ',(u,w)
+						self.bigramCounts[(u,w)] = 1					
+		sorted_x = sorted(self.bigramCounts.items(), key=operator.itemgetter(1))
+		self.topbigrams = {}
+		i = 0
+		for x in sorted_x[:-500]:
+			self.topbigrams[x[0]] = i
+			i+=1
+				
+	# print self.bigramCounts
 
 	def initEncoders(self):
 		self.topicenc = preprocessing.LabelEncoder()
@@ -281,6 +309,15 @@ class FeatureExtractor:
 							vec[count][self.topunigrams[word]] += 1
 				features.append(vec)
 
+			elif feat=='top2grams':
+				vec = np.zeros((len(dataset),len(self.topbigrams)))
+				for count, tweet in enumerate(dataset):
+					for u, w in self.pairwise(tweet[0]):
+						if (u, w) in self.topbigrams:
+							#print 'Found ',(u,w)
+							vec[count][self.topbigrams[(u, w)]] += 1
+				features.append(vec)
+
 			else:
 				print 'Feature not recognized'
 		print 'Final Feature set size:', len(features)
@@ -354,7 +391,7 @@ if __name__ == '__main__':
 	# fe.getYStanceNone('train')
 	# fe.getFeaturesFavorAgainst('train',['words2vec'])
 	# fe.getFeaturesStanceNone('train',['words2vec'])
-	X,y = fe.getFeaturesFavorAgainst('train',['words2vec'])
+	# X,y = fe.getFeaturesFavorAgainst('train',['words2vec'])
 
 	# print fe.getFeaturesMatrix('train',['words'],'topic','Hillary Clinton')[0].shape
 	# print fe.getFeaturesTopicNontopic('train',['words'],'topic', 'Hillary Clinton')[0].shape

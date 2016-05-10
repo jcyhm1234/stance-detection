@@ -243,17 +243,24 @@ class StanceDetector:
 		 ]
 		return param_grid
 
+	def getGridSearchParamsForXGBoost(self):
+		param_grid = [
+			{'n_estimators':[10,20,30,40,50], 'max_depth': [1,2,3,4,5]}
+		]
+
 	def buildSVMWord2VecWithClusters(self):
 		#feats = ['topic1hot']
-		#feats = ['words2vec']
-		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons']
+		#feats = ['words2vec', 'top1grams', 'top2grams']
+		#feats = ['words2vec', 'top1grams']
+		#feats = ['words2vec', 'top2grams']
+		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons', 'top2grams']
 		#feats = ['clusteredLexicons']
 		#feats = ['pos']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		print (X.shape)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
-		clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		clf = LinearSVC(C=1,penalty='l1',dual=False)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
 		f = open('pred','w')
@@ -311,7 +318,6 @@ class StanceDetector:
 		y_pred = fav_agnst_clf.predict(X_test)
 		print accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
-		
 		threshold = -0.25
 		confi_high = np.where(confi<threshold)[0]
 		for loc in confi_high:
@@ -319,18 +325,26 @@ class StanceDetector:
 		print 'Boosted', accuracy_score(y_true, y_pred)
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
-	def runXGBoostModel(model, model_name, X, target, X_test, crossOn):
+	def get_proba_one(self, model, X):
+
+	    predicted = model.predict_proba(X)
+	    return predicted[:, 1]
+
+	def runXGBoostModel(self,model, model_name, X, target, X_test, crossOn):
 	    print "Trying to fit model"
 	    print X.shape, target.shape
 	    model.fit(X, target)
 	    print "Successfully fit model"
-	    predicted = get_proba_one(model, X)
-	    predicted_test = get_proba_one(model, X_test)
+	    predicted = self.get_proba_one(model, X)
+	    predicted_test = self.get_proba_one(model, X_test)
+	    predicted_test = model.predict(X_test)
 	    print predicted_test
 	    return predicted_test
 
-	def word2VecXGBoost():
-		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons']
+
+	def word2VecXGBoost(self):
+		feats = ['words2vec','pos','clusteredLexicons', 'top1grams','top2grams', 'topic1hot' ]
+		#feats = ['words2vec']
 		#feats = ['clusteredLexicons']
 		#feats = ['pos']
 		y_attribute = 'stance'
@@ -347,10 +361,20 @@ class StanceDetector:
 		# f.close()
 		#print clf.score(Xt, yt)
 		#pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
-		m2_xgb = xgb.XGBClassifier(n_estimators=110, nthread=-1, max_depth = 4, seed=1729)
+		m2_xgb = xgb.XGBClassifier(n_estimators=10, nthread=-1, max_depth = 2 	, seed=500)
+		#m2_xgb = GridSearchCV(m2_xgb, self.getGridSearchParamsForXGBoost())
 		print "Run Model"
-		y_pred = runModel(m2_xgb, "m2_xgb_OS_ENN", x_train_OS, y_train_OS, x_test, True)
-		print accuracy_score(y_t, y_pred)
+		y_pred = self.runXGBoostModel(m2_xgb, "m2_xgb_OS_ENN", X, y, Xt, True)
+		# print type(yt)
+		# print type(y_pred)
+		# print len(yt)
+		# print len(y_pred)
+		# print yt.shape
+		# print y_pred.shape
+		# print yt
+		# print y_pred
+		# print(m2_xgb)
+		print accuracy_score(yt, y_pred)
 
 if __name__=='__main__':
 	sd = StanceDetector()
@@ -364,10 +388,11 @@ if __name__=='__main__':
 	# sd.buildStanceNone()
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
-	# sd.buildModel2()
-	# sd.buildSVMWord2VecWithClusters()
+	#sd.buildModel2()
+	#sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
-	sd.buildTrial()
+	# sd.buildTrial()
+	sd.word2VecXGBoost()
 
 
 
