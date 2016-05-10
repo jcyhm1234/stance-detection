@@ -10,6 +10,7 @@ from dataManager import DataManager
 from random import shuffle
 from glove import Glove
 from clusterVectors import Cluster
+from itertools import tee, izip
 
 class FeatureExtractor:
 	def __init__(self, data):
@@ -24,6 +25,7 @@ class FeatureExtractor:
 		self.initEncoders()
 		self.topicVecs = self.word_vec_model.getVectorsForTopics(self.topicenc.classes_)
 		self.collectTopUnigrams()
+		self.collectTopBigrams()
 
 	def buildTweetCorpus(self):
 		self.corpus = []
@@ -51,12 +53,44 @@ class FeatureExtractor:
 			self.topunigrams[x[0]] = i
 			i+=1
 
+	def pairwise(self, iterable):
+	    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+	    a, b = tee(iterable)
+	    next(b, None)
+	    return izip(a, b)
+
+	def collectTopBigrams(self):
+		self.bigramCounts = {}
+		for dataset in [self.data.trainTweets, self.data.testTweets]:
+			for sample in dataset:
+				for u, w in self.pairwise(sample[0]):
+					#print u, w
+					if (u,w) in self.bigramCounts:
+						self.bigramCounts[(u,w)] +=1
+					else:
+						#print 'Duplicate of ',(u,w)
+						self.bigramCounts[(u,w)] = 1					
+		sorted_x = sorted(self.bigramCounts.items(), key=operator.itemgetter(1))
+		self.topbigrams = {}
+		i = 0
+		for x in sorted_x[:-500]:
+			self.topbigrams[x[0]] = i
+			i+=1
+				
+	# print self.bigramCounts
+
 	def initEncoders(self):
 		self.topicenc = preprocessing.LabelEncoder()
 		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Hillary Clinton", "Legalization of Abortion"])
 
 		self.labelenc = preprocessing.LabelEncoder()
 		self.labelenc.fit(["NONE","AGAINST","FAVOR"])		
+
+		self.sentenc = preprocessing.LabelEncoder()
+		self.sentenc.fit(["pos","neg","other"])		
+
+		self.opintow = preprocessing.LabelEncoder()
+		self.opintow.fit(["1.  The tweet explicitly expresses opinion about the target, a part of the target, or an aspect of the target.","2. The tweet does NOT expresses opinion about the target but it HAS opinion about something or someone other than the target.","3.  The tweet is not explicitly expressing opinion. (For example, the tweet is simply giving information.)"])		
 
 		i = 0
 		self.word2i = {}
@@ -197,6 +231,40 @@ class FeatureExtractor:
 						word_f[count][self.getWordIndex(word)] += 1
 				features.append(word_f)
 			
+			elif feat=='givenSentiment':
+				sents = []
+				if mode=='train':
+					sent_f = np.zeros((len(self.data.trainData),3))
+					for row in self.data.trainData:
+						sents.append(row[4])
+				if mode=='test':
+					sent_f = np.zeros((len([row for row in self.data.testData if row[1]!='Donald Trump']),3))
+					for row in self.data.testData:
+						if row[1] !='Donald Trump':
+							sents.append(row[4])
+
+				sents = self.sentenc.transform(sents)
+				for ind,t in enumerate(sents):
+					sent_f[ind][t] = 1
+				features.append(sent_f)
+
+			elif feat=='givenOpinion':
+				opin = []
+				if mode=='train':
+					opin_f = np.zeros((len(self.data.trainData),3))
+					for row in self.data.trainData:
+						opin.append(row[3])
+				if mode=='test':
+					opin_f = np.zeros((len([row for row in self.data.testData if row[1]!='Donald Trump']),3))
+					for row in self.data.testData:
+						if row[1] !='Donald Trump':
+							opin.append(row[3])
+
+				opin = self.opintow.transform(opin)
+				for ind,t in enumerate(opin):
+					opin_f[ind][t] = 1
+				features.append(opin_f)
+
 			elif feat=='topic':
 				topics = []
 				for count, sample in enumerate(dataset):
@@ -276,6 +344,7 @@ class FeatureExtractor:
 					vecs[2].append(self.clusters.getPolarity(wordsAsVecs))
 				# allvecs = np.concatenate(tuple(vecs))
 				for vecsi in vecs:
+					#print 'Adding ', np.asarray(vecsi).shape
 					features.append(np.asarray(vecsi))
 
 			elif feat=='top1grams':
@@ -286,8 +355,18 @@ class FeatureExtractor:
 							vec[count][self.topunigrams[word]] += 1
 				features.append(vec)
 
+			elif feat=='top2grams':
+				vec = np.zeros((len(dataset),len(self.topbigrams)))
+				for count, tweet in enumerate(dataset):
+					for u, w in self.pairwise(tweet[0]):
+						if (u, w) in self.topbigrams:
+							#print 'Found ',(u,w)
+							vec[count][self.topbigrams[(u, w)]] += 1
+				features.append(vec)
+
 			else:
 				print 'Feature not recognized'
+		print 'Final Feature set size:', len(features)
 		features = np.concatenate(tuple(features), axis=1)
 		return features
 
@@ -358,7 +437,7 @@ if __name__ == '__main__':
 	# fe.getYStanceNone('train')
 	# fe.getFeaturesFavorAgainst('train',['words2vec'])
 	# fe.getFeaturesStanceNone('train',['words2vec'])
-	X,y = fe.getFeaturesFavorAgainst('train',['words2vec'])
+	# X,y = fe.getFeaturesFavorAgainst('train',['words2vec'])
 
 	# print fe.getFeaturesMatrix('train',['words'],'topic','Hillary Clinton')[0].shape
 	# print fe.getFeaturesTopicNontopic('train',['words'],'topic', 'Hillary Clinton')[0].shape

@@ -21,6 +21,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+import xgboost as xgb
 
 class StanceDetector:
 	def __init__(self):
@@ -238,13 +239,14 @@ class StanceDetector:
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 	
 	def buildTrial(self):
-		feats = ['pos','words2vec','clusteredLexicons','topic1hot']
+		# feats = ['pos','words2vec','clusteredLexicons','topic1hot']
+		feats = ['givenSentiment','givenOpinion','words2vec','pos','clusteredLexicons','top1grams','top2grams']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)		
 		# clf = DecisionTreeClassifier()
 		# clf = LogisticRegression()
-		clf = LinearSVC(C=0.01, class_weight='balanced', penalty='l1',dual=False)
+		clf = LinearSVC(C=1, class_weight='balanced', penalty='l1',dual=False)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
 		# print y_pred
@@ -284,6 +286,34 @@ class StanceDetector:
 				{'C': [0.001, 0.01, 0.1, 1], 'dual':[False, True]}
 		 ]
 		return param_grid
+
+	def getGridSearchParamsForXGBoost(self):
+		param_grid = [
+			{'n_estimators':[10,20,30,40,50], 'max_depth': [1,2,3,4,5]}
+		]
+
+	def buildSVMWord2VecWithClusters(self):
+		#feats = ['topic1hot']
+		#feats = ['words2vec', 'top1grams', 'top2grams']
+		#feats = ['words2vec', 'top1grams']
+		#feats = ['words2vec', 'top2grams']
+		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons', 'top2grams']
+		#feats = ['clusteredLexicons']
+		#feats = ['pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		print (X.shape)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		clf = LinearSVC(C=1,penalty='l1',dual=False)
+		clf = clf.fit(X,y)
+		y_pred = clf.predict(Xt)
+		f = open('pred','w')
+		for i in y_pred:
+			#print type(i)
+			f.write('{0}'.format(i))
+		f.close()
+		print clf.score(Xt, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 
 	def buildSVMWord2VecWithClustersGridSearch(self):
 		feats = ['words2vec','topic1hot','pos', 'clusteredLexicons']
@@ -326,7 +356,7 @@ class StanceDetector:
 
 	def buildModel2(self):
 		#one SVM for Stance/None and other for Favor/Against
-		feats = ['words2vec','topic1hot','pos']
+		feats = ['words2vec','topic1hot','pos','top2grams','top1grams']
 		stance_none_clf = self.trainStanceNone(feats)
 		fav_agnst_clf = self.trainFavorAgainst(feats)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,'stance')
@@ -353,9 +383,55 @@ class StanceDetector:
 		# print len(np.where(y_pred==0)[0]),len(np.where(y_pred==1)[0]), len(np.where(y_pred==2)[0]),
 		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 		
-	
+	def get_proba_one(self, model, X):
+	    predicted = model.predict_proba(X)
+	    return predicted[:, 1]
+
+	def runXGBoostModel(self,model, model_name, X, target, X_test, crossOn):
+	    print "Trying to fit model"
+	    print X.shape, target.shape
+	    model.fit(X, target)
+	    print "Successfully fit model"
+	    predicted = self.get_proba_one(model, X)
+	    predicted_test = self.get_proba_one(model, X_test)
+	    predicted_test = model.predict(X_test)
+	    print predicted_test
+	    return predicted_test
 
 
+	def word2VecXGBoost(self):
+		feats = ['words2vec','pos','clusteredLexicons', 'top1grams','top2grams', 'topic1hot' ]
+		#feats = ['words2vec']
+		#feats = ['clusteredLexicons']
+		#feats = ['pos']
+		y_attribute = 'stance'
+		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
+		print (X.shape)
+		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
+		#clf = LinearSVC(C=0.01,penalty='l1',dual=False)
+		#clf = clf.fit(X,y)
+		#y_pred = clf.predict(Xt)
+		# f = open('pred','w')
+		# for i in y_pred:
+		# 	#print type(i)
+		# 	f.write('{0}'.format(i))
+		# f.close()
+		#print clf.score(Xt, yt)
+		#pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		m2_xgb = xgb.XGBClassifier(n_estimators=10, nthread=-1, max_depth = 2 	, seed=500)
+		#m2_xgb = GridSearchCV(m2_xgb, self.getGridSearchParamsForXGBoost())
+		print "Run Model"
+		y_pred = self.runXGBoostModel(m2_xgb, "m2_xgb_OS_ENN", X, y, Xt, True)
+		# print type(yt)
+		# print type(y_pred)
+		# print len(yt)
+		# print len(y_pred)
+		# print yt.shape
+		# print y_pred.shape
+		# print yt
+		# print y_pred
+		# print(m2_xgb)
+		print accuracy_score(yt, y_pred)
 
 if __name__=='__main__':
 	sd = StanceDetector()
@@ -365,15 +441,20 @@ if __name__=='__main__':
 	# sd.buildTopicWise()
 	# sd.buildTopicOnlyIndiv()
 	# sd.buildTopicOnlySingle()
-	# sd.buildSVMWord2Vec()
+	#sd.buildSVMWord2Vec()
 	# sd.buildStanceNone()
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
-	sd.buildModel2()
+	# sd.buildModel2()
 	# sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
 	# sd.buildTrial()	
 	# sd.buildGithubSGDModel()
+	#sd.buildModel2()
+	#sd.buildSVMWord2VecWithClusters()
+	# sd.buildSVMWord2VecWithClustersGridSearch()
+	sd.buildTrial()
+	# sd.word2VecXGBoost()
 
 
 

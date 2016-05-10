@@ -27,6 +27,7 @@ class Cluster:
 		labels = kmeans_clustering.fit_predict(vallist)
 		print type(kmeans_clustering.cluster_centers_)
 		print (kmeans_clustering.cluster_centers_.shape)
+		pickle.dump(kmeans_clustering.cluster_centers_, open(outputfile, "wb"))
 		# label_index = {}
 		# label_counts = {}
 		# for i,label in enumerate(labels):
@@ -43,24 +44,26 @@ class Cluster:
 		# pickle.dump(label_index, open(outputfile, "wb"))
 
 	def loadClustersDicts(self):
-		self.senti_pos = pickle.load(open('../data/mean/dict/clusters_positive_'+str(self.num_clusters)+'.p','rb'))
-		self.senti_neg = pickle.load(open('../data/mean/dict/clusters_negative_'+str(self.num_clusters)+'.p','rb'))
+		self.senti_pos = pickle.load(open('../data/mean/dict2/clusters_positive_'+str(self.num_clusters)+'.p','rb'))
+		self.senti_neg = pickle.load(open('../data/mean/dict2/clusters_negative_'+str(self.num_clusters)+'.p','rb'))
 		
-		self.polar_pos = pickle.load(open('../data/mean/dict/clusters_positive_pol_'+str(self.num_clusters)+'.p','rb'))
-		self.polar_neg = pickle.load(open('../data/mean/dict/clusters_negative_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_pos = pickle.load(open('../data/mean/dict2/clusters_positive_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_neg = pickle.load(open('../data/mean/dict2/clusters_negative_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_neg = pickle.load(open('../data/mean/dict2/clusters_neutral_pol_'+str(self.num_clusters)+'.p','rb'))
 
-		self.sub_strong = pickle.load(open('../data/mean/dict/clusters_strong_sub_'+str(self.num_clusters)+'.p','rb'))
-		self.sub_weak = pickle.load(open('../data/mean/dict/clusters_weak_sub_'+str(self.num_clusters)+'.p','rb'))
+		self.sub_strong = pickle.load(open('../data/mean/dict2/clusters_strong_sub_'+str(self.num_clusters)+'.p','rb'))
+		self.sub_weak = pickle.load(open('../data/mean/dict2/clusters_weak_sub_'+str(self.num_clusters)+'.p','rb'))
 
 	def loadClusters(self):
-		self.senti_pos = pickle.load(open('../data/mean/clusters_positive_'+str(self.num_clusters)+'.p','rb'))
-		self.senti_neg = pickle.load(open('../data/mean/clusters_negative_'+str(self.num_clusters)+'.p','rb'))
+		self.senti_pos = pickle.load(open('../data/mean/dict2/clusters_positive_'+str(self.num_clusters)+'.p','rb'))
+		self.senti_neg = pickle.load(open('../data/mean/dict2/clusters_negative_'+str(self.num_clusters)+'.p','rb'))
 		
-		self.polar_pos = pickle.load(open('../data/mean/clusters_positive_pol_'+str(self.num_clusters)+'.p','rb'))
-		self.polar_neg = pickle.load(open('../data/mean/clusters_negative_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_pos = pickle.load(open('../data/mean/dict2/clusters_positive_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_neg = pickle.load(open('../data/mean/dict2/clusters_negative_pol_'+str(self.num_clusters)+'.p','rb'))
+		self.polar_neu = pickle.load(open('../data/mean/dict2/clusters_neutral_pol_'+str(self.num_clusters)+'.p','rb'))
 
-		self.sub_strong = pickle.load(open('../data/mean/clusters_strong_sub_'+str(self.num_clusters)+'.p','rb'))
-		self.sub_weak = pickle.load(open('../data/mean/clusters_weak_sub_'+str(self.num_clusters)+'.p','rb'))
+		self.sub_strong = pickle.load(open('../data/mean/dict2/clusters_strong_sub_'+str(self.num_clusters)+'.p','rb'))
+		self.sub_weak = pickle.load(open('../data/mean/dict2/clusters_weak_sub_'+str(self.num_clusters)+'.p','rb'))
 	
 	def convertClustersDictToArray(self):
 		#convert to numpy arrow for faster distance calculation
@@ -105,16 +108,19 @@ class Cluster:
 	def getPolarity(self, tweetword_vectors):
 		sum_pos_dist = np.zeros(self.num_clusters)
 		sum_neg_dist = np.zeros(self.num_clusters)
+		sum_neu_dist = np.zeros(self.num_clusters)
 		c = 0
 		for wv in tweetword_vectors:
 			if wv is not None:
 				sum_pos_dist += norm( self.polar_pos - wv,axis=1)
 				sum_neg_dist += norm( self.polar_neg - wv,axis=1)
+				sum_neu_dist += norm( self.polar_neu - wv,axis=1)	
 				c+=1
 		if c!=0:
 			sum_neg_dist /= c
 			sum_pos_dist /= c
-		return np.concatenate((sum_pos_dist,sum_neg_dist))
+			sum_neu_dist /= c
+		return np.concatenate((sum_pos_dist,sum_neg_dist,sum_neu_dist))
 
 	def getSentiment(self, tweetword_vectors):
 		sum_pos_dist = np.zeros(self.num_clusters)
@@ -145,30 +151,37 @@ class Cluster:
 		return np.concatenate((sum_strong_dist,sum_weak_dist))
 
 if __name__=='__main__':
-	w = Cluster(100)
+	w = Cluster(5)
 
-	# w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/clusters_positive_50.p', 50)
-	# w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/clusters_positive_100.p', 100)
-	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/clusters_negative_50.p', 50)
-	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/clusters_negative_100.p', 100)
-	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/clusters_positive_pol_50.p', 50)
-	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/clusters_positive_pol_100.p', 100)
-	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/clusters_negative_pol_50.p', 50)
-	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/clusters_negative_pol_100.p', 100)
-	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/clusters_neutral_pol_50.p', 50)
-	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/clusters_neutral_pol_100.p', 100)
-
-	w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/clusters_strong_sub_50.p', 50)
-	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/clusters_strong_sub_100.p', 100)
-	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/clusters_weak_sub_50.p', 50)
-	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/clusters_weak_sub_100.p', 100)
-
-	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/clusters_strong_sub_50.p', 50)
-	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/clusters_strong_sub_100.p', 100)
-	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/clusters_weak_sub_50.p', 50)
-	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/clusters_weak_sub_100.p', 100)
-
-	# w.convertClustersDictToArray()
+	#w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/dict2/clusters_positive_50.p', 50)
+	#w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/dict2/clusters_positive_100.p', 100)
+	#w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/dict2/clusters_positive_10.p', 10)
+	# w.generateClusters('../data/pickle/positive_words_corpus.p', '../data/mean/dict2/clusters_positive_5.p', 5)
+	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/dict2/clusters_negative_50.p', 50)
+	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/dict2/clusters_negative_100.p', 100)
+	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/dict2/clusters_negative_10.p', 10)
+	# w.generateClusters('../data/pickle/negative_words_corpus.p', '../data/mean/dict2/clusters_negative_5.p', 5)
+	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/dict2/clusters_positive_pol_50.p', 50)
+	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/dict2/clusters_positive_pol_100.p', 100)
+	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/dict2/clusters_positive_pol_10.p', 10)
+	# w.generateClusters('../data/pickle/positive_sub_corpus.p', '../data/mean/dict2/clusters_positive_pol_5.p', 5)
+	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/dict2/clusters_negative_pol_50.p', 50)
+	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/dict2/clusters_negative_pol_100.p', 100)
+	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/dict2/clusters_negative_pol_10.p', 10)
+	# w.generateClusters('../data/pickle/negative_sub_corpus.p', '../data/mean/dict2/clusters_negative_pol_5.p', 5)
+	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/dict2/clusters_neutral_pol_50.p', 50)
+	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/dict2/clusters_neutral_pol_100.p', 100)
+	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/dict2/clusters_neutral_pol_10.p', 10)
+	# w.generateClusters('../data/pickle/neutral_sub_corpus.p', '../data/mean/dict2/clusters_neutral_pol_5.p', 5)
+	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/dict2/clusters_strong_sub_50.p', 50)
+	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/dict2/clusters_strong_sub_100.p', 100)
+	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/dict2/clusters_strong_sub_10.p', 10)
+	# w.generateClusters('../data/pickle/strong_sub_corpus.p', '../data/mean/dict2/clusters_strong_sub_5.p', 5)
+	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/dict2/clusters_weak_sub_50.p', 50)
+	#w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/dict2/clusters_weak_sub_100.p', 100)
+	#w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/dict2/clusters_weak_sub_10.p', 10)
+	# w.generateClusters('../data/pickle/weak_sub_corpus.p', '../data/mean/dict2/clusters_weak_sub_5.p', 5)
+	#w.convertClustersDictToArray()
 
 
 
