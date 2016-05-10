@@ -22,7 +22,7 @@ class FeatureExtractor:
 		self.glove_vec_model = Glove(100, self.corpus)
 		self.clusters = Cluster(100)
 		self.initEncoders()
-
+		self.topicVecs = self.word_vec_model.getVectorsForTopics(self.topicenc.classes_)
 		self.collectTopUnigrams()
 
 	def buildTweetCorpus(self):
@@ -56,7 +56,7 @@ class FeatureExtractor:
 		self.topicenc.fit(["Atheism", "Climate Change is a Real Concern", "Feminist Movement", "Hillary Clinton", "Legalization of Abortion"])
 
 		self.labelenc = preprocessing.LabelEncoder()
-		self.labelenc.fit(["NONE","FAVOR","AGAINST"])		
+		self.labelenc.fit(["NONE","AGAINST","FAVOR"])		
 
 		i = 0
 		self.word2i = {}
@@ -96,10 +96,10 @@ class FeatureExtractor:
 	def getWord2Vec(self, tweetwords):
 		return self.word_vec_model.getFeatureVectorsFromBinary(tweetwords)
 
-	def getWords2Vectors(self, tweetwords):
-		#returns vector for each tweetword
+	def getWords2Vectors(self, words):
+		#returns vector for each word
 		rval = []
-		for word in tweetwords:
+		for word in words:
 			rval.append(self.word_vec_model.getVectorForWord(word))
 		return rval
 
@@ -113,7 +113,7 @@ class FeatureExtractor:
 				conf = wordtags[2]
 				
 				#adds confidence as weight for each tag found in tweet
-				pos_feats[ind][self.pos2i[tag]] += conf
+				pos_feats[ind][self.pos2i[tag]] = 1
 				
 		return pos_feats
 
@@ -203,7 +203,7 @@ class FeatureExtractor:
 					topics.append(sample[1])
 				topic_f = self.topicenc.transform(topics)
 				topic_f = topic_f.reshape(topic_f.shape[0],1)
-				features.append(topic_f)
+				features.append(np.asarray(topic_f))
 
 			elif feat=='topic1hot':
 				topics = []
@@ -215,6 +215,12 @@ class FeatureExtractor:
 					topics_f[ind][t] = 1
 				features.append(topics_f)
 			
+			elif feat=='topicVecs':
+				topics = []
+				for tweet in dataset:
+					topics.append(self.topicVecs[tweet[1]])
+				features.append(np.asarray(topics))
+					
 			elif feat=='lexiconsbyword':
 				lex_f = np.zeros((len(dataset),len(self.corpus)*3))
 				for count, sample in enumerate(dataset):

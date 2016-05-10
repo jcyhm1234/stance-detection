@@ -2,9 +2,9 @@ import json
 import csv
 import re
 from nltk.tokenize import TweetTokenizer
+from random import shuffle
 
-class DataManager:
-	
+class DataManager:	
 	def __init__(self, trainFile, testFile):
 		self.trainFile = trainFile
 		self.testFile = testFile
@@ -53,7 +53,6 @@ class DataManager:
 		self.trainTweets = [(self.tweetPreprocess(row[0]),row[1],row[2]) for row in self.trainData]
 		self.testTweets = [(self.tweetPreprocess(row[0]),row[1], row[2]) for row in self.testData if row[1]!='Donald Trump']
 
-
 	def tweetPreprocess(self,tw):
 		#remove nonascii
 		tw = ''.join(i for i in tw if ord(i)<128)
@@ -63,7 +62,7 @@ class DataManager:
 		#lowercase
 		tw = tw.lower()
 		#Convert @username to AT_USER
-		tw = re.sub('@[^\s]+','<user>',tw)
+		tw = re.sub('@[^\s]+','',tw)
 		#Remove additional white spaces
 		tw = re.sub('[\s]+', ' ', tw)
 		#remove punctuations
@@ -79,7 +78,7 @@ class DataManager:
 		return rval
 
 def removeNumbers(tw):
-	tw = re.sub("\d+[.,:]*\d+","<number>",tw)
+	tw = re.sub("\d+[.,:]*\d+","",tw)
 	return tw
 
 def expandHashtag(tw):

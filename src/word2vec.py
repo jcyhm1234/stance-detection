@@ -49,9 +49,28 @@ class Word2Vec:
 	def getVectorForWord(self, word):
 		if word in self.corpus_vectors:
 			return self.corpus_vectors[word]
+		elif word[0]=='#' and word[1:] and word[1:] in self.corpus_vectors:
+			return self.corpus_vectors[word[1:]]
 		else:
-			return None
+			# print word
+			return np.zeros(300)
 
+	def getVectorsForTopics(self, topics):
+		rval = {}
+		for topic in topics:
+			words = topic.lower().split()
+			topic_vector = None
+			c = 0
+			for word in words:
+				if word in self.corpus_vectors:
+					if topic_vector is None:
+						topic_vector = self.corpus_vectors[word]
+					else:
+						topic_vector += self.corpus_vectors[word]
+					c+=1
+			topic_vector /= c
+			rval[topic] = topic_vector
+		return rval
 
 	def getFeatureVectorsFromBinary(self, data):
 		size = 300
@@ -162,3 +181,4 @@ class Word2Vec:
 				
 if __name__=='__main__':
 	w = Word2Vec()
+	print w.getVectorForWord('motivational')

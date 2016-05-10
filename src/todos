@@ -2,6 +2,8 @@
 # Entire document word2vec classification 
 # Are we training with the target ? for the normal classifiers  ?
 # introduce gridsearch
+# add hashtags into wordvector corpus
+
 
 Models to build
 1. Single SVM with these features

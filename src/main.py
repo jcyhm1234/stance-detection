@@ -2,11 +2,13 @@ from dataManager import DataManager
 from featureExtractor import FeatureExtractor
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.svm import LinearSVC
-from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import make_scorer
 from evaluate import Evaluate
 from pprint import pprint
 import numpy as np
@@ -15,6 +17,10 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
 
 class StanceDetector:
 	def __init__(self):
@@ -138,7 +144,7 @@ class StanceDetector:
 		y_attribute = 'topic'
 		clf_topic = {}
 		for topic in list(self.fe.topicenc.classes_):
-			X,y = self.fe.getFeaturesTopicNontopic('train',feats,y_attribute, topic)
+			X,y = self.fe.get('train',feats,y_attribute, topic)
 			# Xt,yt = self.fe.getFeaturesTopicNontopic('test',feats,y_attribute, topic)
 			clf = LinearSVC()
 			clf = clf.fit(X,y)
@@ -161,43 +167,50 @@ class StanceDetector:
 		# print newclf.score(newXt, yt)
 
 	def trainTopicSVM(self, topic):
-		feats = ['words','lexiconsbyword','topic']
+		feats = ['words2vec','clusteredLexicons','topic1hot']
 		y_attribute = 'stance'
 		
-		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute, topic=topic)
-		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute, topic=topic)
-		clf = LinearSVC()
+		X,y = self.fe.getFeaturesTopicNontopic('train',feats,y_attribute, topic=topic)
+		X_test,y_true = self.fe.getFeaturesTopicNontopic('test',feats,y_attribute, topic=topic)
+		clf = LinearSVC(C=0.01)
 		clf = clf.fit(X,y)
-
-		print clf.score(X_test, y_true)
+		print topic #,clf.score(X_test, y_true)
 		return clf
 	
 	#shit
 	def buildTopicWise(self):
 		#separate SVC for each topic, tests on that class only first, then on all
 		topic_clf = {}
-		feats = ['words','lexiconsbyword','topic']
+		feats = ['words2vec','clusteredLexicons','topic1hot']
+		
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
 
 		#X matrix for new classifier which uses this as train matrix
 		#has columns of each topic classifier's confidence function
-		X_fx = []
-		X_ftestx = []
+		# X_fx = []
+		# X_ftestx = []
+		preds = []
 		for topic in list(self.fe.topicenc.classes_):
-			print topic,
 			topic_clf[topic] = self.trainTopicSVM(topic)
-			X_fx.append(topic_clf[topic].decision_function(X))
-			X_ftestx.append(topic_clf[topic].decision_function(X_test))
+			preds.append(topic_clf[topic].predict(X_test))
+			# X_fx.append(topic_clf[topic].decision_function(X))
+			# X_ftestx.append(topic_clf[topic].decision_function(X_test))
 
-		X_fx = np.concatenate(tuple(X_fx), axis=1)
-		X_ftestx = np.concatenate(tuple(X_ftestx), axis=1)
+		allpreds = np.vstack(tuple(preds))
+		topic1hot, temp = self.fe.getFeaturesMatrix('test',['topic1hot'],'stance')
+		# print allpreds.shape, topic1hot.T.shape
+		allpreds[allpreds==5] = 1
+		final_pred = np.multiply(topic1hot.T,allpreds)
 
-		clf = LinearSVC().fit(X_fx, y)
-		y_pred = clf.predict(X_ftestx)
-		print accuracy_score(y_true, y_pred)
-		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		prediction = np.sum(final_pred, axis=0).astype(int)
+		# X_fx = np.concatenate(tuple(X_fx), axis=1)
+		# X_ftestx = np.concatenate(tuple(X_ftestx), axis=1)
+		# clf = LinearSVC().fit(X_fx, y)
+		# y_pred = clf.predict(X_ftestx)
+		print accuracy_score(y_true, prediction)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(prediction)))
 
 
 	#GOOD 66%acc
@@ -225,20 +238,50 @@ class StanceDetector:
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 	
 	def buildTrial(self):
-		feats = ['words2vec','pos','clusteredLexicons']
-		y_attribute = 'topic'
+		feats = ['pos','words2vec','clusteredLexicons','topic1hot']
+		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)		
-		clf = LinearSVC(C=0.01)
+		# clf = DecisionTreeClassifier()
+		# clf = LogisticRegression()
+		clf = LinearSVC(C=0.01, class_weight='balanced', penalty='l1',dual=False)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
+		# print y_pred
+		print len(np.where(y_pred==0)[0]),len(np.where(y_pred==1)[0]),len(np.where(y_pred>1)[0])
+		print len(y_pred)
+		print 'training accuracy',clf.score(X, y)
 		print clf.score(Xt, yt)
-		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+
+	def buildGithubSGDModel(self):
+		# feats = ['words2vec','topic1hot','pos']
+		y_attribute = 'stance'
+		dataset = self.fe.getDataset('train')
+		dataset2 = self.fe.getDataset('test')
+		y_train = self.fe.getY('train',dataset, y_attribute)
+		y_test = self.fe.getY('train',dataset2, y_attribute)
+
+		tfidf = TfidfVectorizer(ngram_range=(1, 2), max_df=1.0, min_df=1, binary=True, norm='l2', use_idf=True, smooth_idf=False, sublinear_tf=True, encoding='latin1')
+		
+		X_train = tfidf.fit_transform(self.data.trainTweetsText)
+		X_test = tfidf.transform(self.data.testTweetsText)
+		tuned_parameters = {'alpha': [10 ** a for a in range(-12, 0)]}
+		clf = GridSearchCV(SGDClassifier(loss='hinge', penalty='elasticnet',l1_ratio=0.75, n_iter=10, shuffle=True, verbose=False, n_jobs=4, average=False)
+                      , tuned_parameters, cv=10, scoring='f1_weighted')
+
+		clf.fit(X_train, y_train)
+		print clf.best_params_
+		print("Grid scores on development set:")
+		for params, mean_score, scores in clf.grid_scores_:
+			print "%0.3f (+/-%0.03f) for %r" % (mean_score, scores.std() * 2, params)
+		print classification_report(y_test, clf.predict(X_test))
+		print clf.score(X_test, y_test)
 
 
 	def getGridSearchParams(self):
 		param_grid = [
-				{'C': [0.001, 0.01, 0.1, 1], 'penalty': ['l2'], 'dual':[False,True]}
+				{'C': [0.001, 0.01, 0.1, 1], 'dual':[False, True]}
 		 ]
 		return param_grid
 
@@ -262,15 +305,22 @@ class StanceDetector:
 		# feats = ['words2vec','topic1hot','pos']
 		X,y = self.fe.getFeaturesStanceNone('train',feats)
 		Xt,yt = self.fe.getFeaturesStanceNone('test',feats)
-		stance_none_clf = LinearSVC(C=0.01).fit(X, y)
+		svmclf = LinearSVC()
+		stance_none_clf = GridSearchCV(svmclf, self.getGridSearchParams(), scoring='f1_macro').fit(X, y)
 		# print stance_none_clf.score(Xt, yt)
+		pred = stance_none_clf.predict(Xt)
+		print classification_report(yt, pred)
 		return stance_none_clf
 
 	def trainFavorAgainst(self,feats):
 		# feats = ['words2vec','topic1hot','pos']
 		X,y = self.fe.getFeaturesFavorAgainst('train',feats)
 		Xt,yt = self.fe.getFeaturesFavorAgainst('test',feats)
-		fav_agnst_clf = LinearSVC(C=0.01).fit(X, y)
+		svmclf = LinearSVC()
+		fav_agnst_clf = GridSearchCV(svmclf, self.getGridSearchParams(), scoring='f1_macro').fit(X, y)
+		pred = fav_agnst_clf.predict(Xt)
+		print classification_report(yt, pred)
+
 		# print fav_agnst_clf.score(Xt, yt)
 		return fav_agnst_clf
 
@@ -280,22 +330,28 @@ class StanceDetector:
 		stance_none_clf = self.trainStanceNone(feats)
 		fav_agnst_clf = self.trainFavorAgainst(feats)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,'stance')
-		
-		assert(stance_none_clf.classes_[1]==3) #stance(3)
-		# >0 means this class - stance will be predicted
-		# <0 means none is predicted
-		confi = stance_none_clf.decision_function(X_test)
-		# treat as confident about none if confi<-0.25:
-		y_pred = fav_agnst_clf.predict(X_test)
-		print accuracy_score(y_true, y_pred)
-		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
-		
-		threshold = -0.25
-		confi_high = np.where(confi<threshold)[0]
-		for loc in confi_high:
-			y_pred[loc] = self.fe.labelenc.transform('NONE')
-		print 'Boosted', accuracy_score(y_true, y_pred)
-		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		st_pred = stance_none_clf.predict(X_test)
+		favaga_pred = fav_agnst_clf.predict(X_test)
+		for index,row in enumerate(st_pred):
+			if row==3:
+				st_pred[index] = favaga_pred[index]
+		print classification_report(y_true, st_pred)
+		print accuracy_score(y_true, st_pred)
+		# assert(stance_none_clf.classes_[1]==3) #stance(3)
+		# # >0 means this class - stance will be predicted
+		# # <0 means none is predicted
+		# confi = stance_none_clf.decision_function(X_test)
+		# # treat as confident about none if confi<-0.25:
+		# y_pred = fav_agnst_clf.predict(X_test)
+		# print accuracy_score(y_true, y_pred)
+		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		# threshold = -0.25
+		# confi_high = np.where(confi<threshold)[0]
+		# for loc in confi_high:
+		# 	y_pred[loc] = self.fe.labelenc.transform('NONE')
+		# print 'Boosted', accuracy_score(y_true, y_pred)
+		# print len(np.where(y_pred==0)[0]),len(np.where(y_pred==1)[0]), len(np.where(y_pred==2)[0]),
+		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
 		
 	
 
@@ -313,10 +369,11 @@ if __name__=='__main__':
 	# sd.buildStanceNone()
 	# sd.trainStanceNone()
 	# sd.trainFavorAgainst()
-	# sd.buildModel2()
+	sd.buildModel2()
 	# sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
-	sd.buildTrial()
+	# sd.buildTrial()	
+	# sd.buildGithubSGDModel()
 
 
 
