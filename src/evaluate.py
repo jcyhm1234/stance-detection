@@ -29,6 +29,7 @@ class Evaluate:
 		p = subprocess.Popen(args, stdout=subprocess.PIPE)
 		output = p.communicate()
 		p.stdout.close()  # Allow ps_process to receive a SIGPIPE if grep_process exits.
+
 		ans = {}
 		for l in output[0].split('\n'):
 			words = l.split()
@@ -40,6 +41,25 @@ class Evaluate:
 					ans[words[0]][words[5]] = float(words[6])
 				if words[0]=='Macro':
 					ans[words[0]] = float(words[2])
+		
+		#favor
+		for key in ans:
+			# print key, 
+			if key=='Macro':
+				print ans[key]
+				continue
+			# print 'precision'
+			print ans[key]['precision:'],',',
+			# print 'recall'
+			print ans[key]['recall:'],',',
+			# print 'f-score'
+			print ans[key]['f-score:'],',',
+
+
+		#against
+
+		#overall
+
 		return ans
 
 if __name__=='__main__':

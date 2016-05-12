@@ -55,22 +55,25 @@ class StanceDetector:
 
 
 	def buildSimple(self, model):
-		print 'Training NB '
-		feats = ['words','lexiconsbyword','topic']
+		feats = ['topicVecs','words2vec']
+		print feats
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,y_attribute)
-		for mode in ['simple','tfidf']:
+		for mode in ['simple']:#,'tfidf']:
 			if model=='bayes':
 				cl = MultinomialNB()
 			elif model=='svm':
+				# cl = LinearSVC()
 				cl = LinearSVC()
+				cl = GridSearchCV(cl, self.getGridSearchParams())
 
 			if mode=='tfidf':
 				cl = Pipeline([('tfidf', TfidfTransformer()),
 					  ('clf', cl), ])
 			
 			clf = cl.fit(X, y)
+			# print cl.best_params_
 			y_pred = clf.predict(X_test)
 			print mode, accuracy_score(y_true, y_pred)
 			pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
@@ -144,12 +147,12 @@ class StanceDetector:
 
 	def buildTopicOnlyMultiple(self):
 		#one svm for each topic
-		feats = ['words']
-		y_attribute = 'topic'
+		feats = ['words2vec']
+		y_attribute = 'stance'
 		clf_topic = {}
 		for topic in list(self.fe.topicenc.classes_):
-			X,y = self.fe.get('train',feats,y_attribute, topic)
-			# Xt,yt = self.fe.getFeaturesTopicNontopic('test',feats,y_attribute, topic)
+			X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute, topic)
+			Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute, topic)
 			clf = LinearSVC()
 			clf = clf.fit(X,y)
 			clf_topic[topic] = clf
@@ -176,12 +179,16 @@ class StanceDetector:
 		
 		X,y = self.fe.getFeaturesTopicNontopic('train',feats,y_attribute, topic=topic)
 		X_test,y_true = self.fe.getFeaturesTopicNontopic('test',feats,y_attribute, topic=topic)
-		clf = LinearSVC(C=0.01)
+		clf = LinearSVC()
+		clf = GridSearchCV(clf,self.getGridSearchParams())
 		clf = clf.fit(X,y)
+		print clf.best_params_
 		print topic #,clf.score(X_test, y_true)
 		return clf
 	
-	#shit
+	#WRITE
+	#WRITE
+	#WRITE
 	def buildTopicWise(self):
 		#separate SVC for each topic, tests on that class only first, then on all
 		topic_clf = {}
@@ -220,7 +227,7 @@ class StanceDetector:
 	#GOOD 66%acc
 	#1.2 % increase with change topic to 1hot
 	def buildSVMWord2Vec(self):
-		feats = ['words2vec','topic1hot','pos']
+		feats = ['words2vec','topic1hot']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)
@@ -243,7 +250,8 @@ class StanceDetector:
 	
 	def buildTrial(self):
 		# feats = ['pos','words2vec','clusteredLexicons','topic1hot']
-		feats = ['givenSentiment','givenOpinion','words2vec','pos','clusteredLexicons','top1grams','top2grams']
+		# 'givenSentiment','givenOpinion'
+		feats = ['words2vec','pos','clusteredLexicons','top1grams','top2grams']
 		y_attribute = 'stance'
 		X,y = self.fe.getFeaturesMatrix('train',feats,y_attribute)
 		Xt,yt = self.fe.getFeaturesMatrix('test',feats,y_attribute)		
@@ -286,7 +294,7 @@ class StanceDetector:
 
 	def getGridSearchParams(self):
 		param_grid = [
-				{'C': [0.001, 0.01, 0.1, 1], 'dual':[False, True]}
+				{'C': [0.001, 0.01, 0.1, 1], 'dual':[False, True],'class_weight':['balanced',None]}
 		 ]
 		return param_grid
 
@@ -346,7 +354,7 @@ class StanceDetector:
 		X,y = self.fe.getFeaturesStanceNone('train',feats)
 		Xt,yt = self.fe.getFeaturesStanceNone('test',feats)
 		svmclf = LinearSVC()
-		stance_none_clf = GridSearchCV(svmclf, self.getGridSearchParams(), scoring='f1_macro').fit(X, y)
+		stance_none_clf = GridSearchCV(svmclf, self.getGridSearchParams()).fit(X, y)
 		# print stance_none_clf.score(Xt, yt)
 		pred = stance_none_clf.predict(Xt)
 		print classification_report(yt, pred)
@@ -357,7 +365,7 @@ class StanceDetector:
 		X,y = self.fe.getFeaturesFavorAgainst('train',feats)
 		Xt,yt = self.fe.getFeaturesFavorAgainst('test',feats)
 		svmclf = LinearSVC()
-		fav_agnst_clf = GridSearchCV(svmclf, self.getGridSearchParams(), scoring='f1_macro').fit(X, y)
+		fav_agnst_clf = GridSearchCV(svmclf, self.getGridSearchParams()).fit(X, y)
 		pred = fav_agnst_clf.predict(Xt)
 		print classification_report(yt, pred)
 
@@ -366,7 +374,8 @@ class StanceDetector:
 
 	def buildModel2(self):
 		#one SVM for Stance/None and other for Favor/Against
-		feats = ['words2vec','topic1hot','pos','top2grams','top1grams']
+		feats = ['words2vec','topic1hot','pos']
+		print feats
 		stance_none_clf = self.trainStanceNone(feats)
 		fav_agnst_clf = self.trainFavorAgainst(feats)
 		X_test,y_true = self.fe.getFeaturesMatrix('test',feats,'stance')
@@ -456,11 +465,10 @@ class StanceDetector:
 			clf = clf.fit(X,y)
 			train_transform = clf.predict_log_proba(X)
 			test_transform = clf.predict_log_proba(Xt)
-			print 'Train transform ',train_transform.shape
-			print 'Test transform ',test_transform.shape
+			# print 'Train transform ',train_transform.shape
+			# print 'Test transform ',test_transform.shape
 			y_pred.append(train_transform)
 			y_t.append(test_transform)
-			print type(y_pred)
 		#y_pred_h = np.hstack(tuple(y_pred))
 		#y_t_h = np.hstack(tuple(y_t))
 		x = 0
@@ -471,9 +479,9 @@ class StanceDetector:
 		for i in y_t:
 			   x += i
 		y_t_h = x
-		print type(y_pred_h)
-		print y_pred_h[0]
-		print y_pred_h.shape
+		# print type(y_pred_h)
+		# print y_pred_h[0]
+		# print y_pred_h.shape
 		regr = linear_model.LogisticRegression()
 		regr.fit(y_pred_h, y)
 		final_pred = regr.predict(y_t_h)
@@ -483,7 +491,15 @@ class StanceDetector:
 if __name__=='__main__':
 	sd = StanceDetector(-1)
 	# sd.buildBaseline('bayes')
+	# print ''
+	# sd.buildBaseline('svm')
 	# sd.buildSimple('svm')
+	# sd.buildGithubSGDModel()
+	# sd.buildTopicOnlyMultiple()
+	
+	# sd.buildSVMWord2Vec()
+	# sd.buildTopicWise()
+
 	# sd.buildTopicStanceSeparate()
 	# sd.buildTopicWise()
 	# sd.buildTopicOnlyIndiv()
@@ -497,7 +513,7 @@ if __name__=='__main__':
 	# sd.buildSVMWord2VecWithClustersGridSearch()
 	# sd.buildTrial()	
 	# sd.buildGithubSGDModel()
-	#sd.buildModel2()
+	# sd.buildModel2()
 	#sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
 	# sd.buildTrial()

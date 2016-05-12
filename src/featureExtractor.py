@@ -366,7 +366,7 @@ class FeatureExtractor:
 
 			else:
 				print 'Feature not recognized'
-		print 'Final Feature set size:', len(features)
+		# print 'Final Feature set size:', len(features)
 		features = np.concatenate(tuple(features), axis=1)
 		return features
 
