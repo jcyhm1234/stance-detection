@@ -16,6 +16,7 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 from sklearn.ensemble import AdaBoostClassifier
 import xgboost as xgb
+from sklearn import linear_model
 
 class StanceDetector:
 	def __init__(self):
@@ -37,7 +38,7 @@ class StanceDetector:
 
 			if mode=='tfidf':
 				cl = Pipeline([('tfidf', TfidfTransformer()),
-                      ('clf', cl), ])
+					  ('clf', cl), ])
 
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
@@ -59,7 +60,7 @@ class StanceDetector:
 
 			if mode=='tfidf':
 				cl = Pipeline([('tfidf', TfidfTransformer()),
-                      ('clf', cl), ])
+					  ('clf', cl), ])
 			
 			clf = cl.fit(X, y)
 			y_pred = clf.predict(X_test)
@@ -327,19 +328,19 @@ class StanceDetector:
 
 	def get_proba_one(self, model, X):
 
-	    predicted = model.predict_proba(X)
-	    return predicted[:, 1]
+		predicted = model.predict_proba(X)
+		return predicted[:, 1]
 
 	def runXGBoostModel(self,model, model_name, X, target, X_test, crossOn):
-	    print "Trying to fit model"
-	    print X.shape, target.shape
-	    model.fit(X, target)
-	    print "Successfully fit model"
-	    predicted = self.get_proba_one(model, X)
-	    predicted_test = self.get_proba_one(model, X_test)
-	    predicted_test = model.predict(X_test)
-	    print predicted_test
-	    return predicted_test
+		print "Trying to fit model"
+		print X.shape, target.shape
+		model.fit(X, target)
+		print "Successfully fit model"
+		predicted = self.get_proba_one(model, X)
+		predicted_test = self.get_proba_one(model, X_test)
+		predicted_test = model.predict(X_test)
+		print predicted_test
+		return predicted_test
 
 
 	def word2VecXGBoost(self):
@@ -376,6 +377,43 @@ class StanceDetector:
 		# print(m2_xgb)
 		print accuracy_score(yt, y_pred)
 
+	def buildModel3(self):
+		#feats = [['words2vec'],['pos'],['clusteredLexicons']]
+		feats = [['words2vec'],['pos'],['clusteredLexicons']]
+		y_attribute = 'stance'
+		y_pred = []
+		y_t = []
+		for f in feats:
+			X,y = self.fe.getFeaturesMatrix('train',f,y_attribute)
+			Xt,yt = self.fe.getFeaturesMatrix('test',f,y_attribute)
+			clf = SVC(C=1, probability=True)
+			clf = clf.fit(X,y)
+			train_transform = clf.predict_log_proba(X)
+			test_transform = clf.predict_log_proba(Xt)
+			print 'Train transform ',train_transform.shape
+			print 'Test transform ',test_transform.shape
+			y_pred.append(train_transform)
+			y_t.append(test_transform)
+			print type(y_pred)
+		#y_pred_h = np.hstack(tuple(y_pred))
+		#y_t_h = np.hstack(tuple(y_t))
+		x = 0
+		for i in y_pred:
+			   x += i
+		y_pred_h = x
+		x = 0
+		for i in y_t:
+			   x += i
+		y_t_h = x
+		print type(y_pred_h)
+		print y_pred_h[0]
+		print y_pred_h.shape
+		regr = linear_model.LogisticRegression()
+		regr.fit(y_pred_h, y)
+		final_pred = regr.predict(y_t_h)
+		print accuracy_score(final_pred, yt)
+		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(final_pred)))
+
 if __name__=='__main__':
 	sd = StanceDetector()
 	# sd.buildBaseline('bayes')
@@ -392,7 +430,8 @@ if __name__=='__main__':
 	#sd.buildSVMWord2VecWithClusters()
 	# sd.buildSVMWord2VecWithClustersGridSearch()
 	# sd.buildTrial()
-	sd.word2VecXGBoost()
+	# sd.word2VecXGBoost()
+	sd.buildModel3()
 
 
 
