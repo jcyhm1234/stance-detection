@@ -481,7 +481,7 @@ class StanceDetector:
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(final_pred)))
 
 if __name__=='__main__':
-	# sd = StanceDetector()
+	sd = StanceDetector(-1)
 	# sd.buildBaseline('bayes')
 	# sd.buildSimple('svm')
 	# sd.buildTopicStanceSeparate()
@@ -502,25 +502,25 @@ if __name__=='__main__':
 	# sd.buildSVMWord2VecWithClustersGridSearch()
 	# sd.buildTrial()
 	# sd.word2VecXGBoost()
-	# sd.buildTrial()
+	sd.buildTrial()
 	# sd.word2VecXGBoost()
 	# sd.buildModel3()
-	results = []
-	datasizes = [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1] 
-	# for i in [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1]:
-	for i in datasizes:
-		sd = StanceDetector(i)
-		results.append(sd.buildSVMWord2VecWithClusters())
-		print type(results[0])
+	# results = []
+	# datasizes = [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1] 
+	# # for i in [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1]:
+	# for i in datasizes:
+	# 	sd = StanceDetector(i)
+	# 	results.append(sd.buildSVMWord2VecWithClusters())
+	# 	print type(results[0])
 
-	accuracy, fscore = map(list,zip(*results))
+	# accuracy, fscore = map(list,zip(*results))
 	# print accuracy
 	# print fscore
 	# print type(accuracy)
 	# print type(fscore)
 	# print len(fscore)
 	# print len(accuracy)
-	pickle.dump(results, open('plotData2', "wb"))
+	# pickle.dump(results, open('plotData2', "wb"))
 	# plt.plot(datasizes, accuracy)
 	# plt.show()
 	# plt.plot(datasizes, fscore)
