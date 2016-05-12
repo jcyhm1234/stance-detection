@@ -73,7 +73,7 @@ class FeatureExtractor:
 		sorted_x = sorted(self.bigramCounts.items(), key=operator.itemgetter(1))
 		self.topbigrams = {}
 		i = 0
-		for x in sorted_x[:-500]:
+		for x in sorted_x[:-100]:
 			self.topbigrams[x[0]] = i
 			i+=1
 				
