@@ -23,10 +23,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 import xgboost as xgb
 from sklearn import linear_model
+import pickle
+import matplotlib.pyplot as plt
 
 class StanceDetector:
-	def __init__(self):
-		self.data = DataManager('../data/train.csv','../data/test.csv')
+	def __init__(self, n):
+		self.data = DataManager('../data/train.csv','../data/test.csv', n)
 		self.fe = FeatureExtractor(self.data)
 		self.eval = Evaluate()
 
@@ -298,7 +300,8 @@ class StanceDetector:
 		#feats = ['words2vec', 'top1grams', 'top2grams']
 		#feats = ['words2vec', 'top1grams']
 		#feats = ['words2vec', 'top2grams']
-		feats = ['words2vec','topic1hot', 'pos','clusteredLexicons', 'top2grams']
+		feats = ['words2vec', 'clusteredLexicons', 'topic1hot', 'pos']
+		#feats = ['words2vec','topic1hot', 'pos','clusteredLexicons', 'top2grams']
 		#feats = ['clusteredLexicons']
 		#feats = ['pos']
 		y_attribute = 'stance'
@@ -308,13 +311,19 @@ class StanceDetector:
 		clf = LinearSVC(C=1,penalty='l1',dual=False)
 		clf = clf.fit(X,y)
 		y_pred = clf.predict(Xt)
-		f = open('pred','w')
-		for i in y_pred:
-			#print type(i)
-			f.write('{0}'.format(i))
-		f.close()
-		print clf.score(Xt, yt)
-		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		# f = open('pred','w')
+		# for i in y_pred:
+		# 	#print type(i)
+		# 	f.write('{0}'.format(i))
+		# f.close()
+		accuracy = clf.score(Xt, yt)
+		# print clf.score(Xt, yt)
+		fscores = self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred))
+		# print type(fscores)
+		# print fscores
+		# pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(y_pred)))
+		# print (accuracy, fscores['Macro'])
+		return (accuracy, fscores['Macro'])
 
 	def buildSVMWord2VecWithClustersGridSearch(self):
 		feats = ['words2vec','topic1hot','pos', 'clusteredLexicons']
@@ -387,7 +396,7 @@ class StanceDetector:
 	def get_proba_one(self, model, X):
 	    predicted = model.predict_proba(X)
 	    return predicted[:, 1]
-	    
+
 	def runXGBoostModel(self,model, model_name, X, target, X_test, crossOn):
 		print "Trying to fit model"
 		print X.shape, target.shape
@@ -472,7 +481,7 @@ class StanceDetector:
 		pprint(self.eval.computeFscores(self.data.testTweets, self.fe.labelenc.inverse_transform(final_pred)))
 
 if __name__=='__main__':
-	sd = StanceDetector()
+	# sd = StanceDetector()
 	# sd.buildBaseline('bayes')
 	# sd.buildSimple('svm')
 	# sd.buildTopicStanceSeparate()
@@ -495,7 +504,28 @@ if __name__=='__main__':
 	# sd.word2VecXGBoost()
 	# sd.buildTrial()
 	# sd.word2VecXGBoost()
-	sd.buildModel3()
+	# sd.buildModel3()
+	results = []
+	datasizes = [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1] 
+	# for i in [250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,-1]:
+	for i in datasizes:
+		sd = StanceDetector(i)
+		results.append(sd.buildSVMWord2VecWithClusters())
+		print type(results[0])
+
+	accuracy, fscore = map(list,zip(*results))
+	# print accuracy
+	# print fscore
+	# print type(accuracy)
+	# print type(fscore)
+	# print len(fscore)
+	# print len(accuracy)
+	pickle.dump(results, open('plotData2', "wb"))
+	# plt.plot(datasizes, accuracy)
+	# plt.show()
+	# plt.plot(datasizes, fscore)
+	# plt.show()
+	
 
 
 

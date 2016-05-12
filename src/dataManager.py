@@ -3,9 +3,10 @@ import csv
 import re
 from nltk.tokenize import TweetTokenizer
 from random import shuffle
+import random
 
 class DataManager:	
-	def __init__(self, trainFile, testFile):
+	def __init__(self, trainFile, testFile, n):
 		self.trainFile = trainFile
 		self.testFile = testFile
 		
@@ -20,11 +21,11 @@ class DataManager:
 		
 		self.tknzr = TweetTokenizer()
 
-		self.load()
+		self.load(n)
 		self.loadStopwords()
 		self.preprocess()
 
-	def load(self):
+	def load(self, n):
 		with open(self.trainFile, 'r') as f:
 			self.trainData = [row for row in csv.reader(f.read().splitlines())]
 		with open(self.testFile, 'r') as f:
@@ -32,6 +33,11 @@ class DataManager:
 		# remove the header from the data
 		self.trainData.pop(0)
 		self.testData.pop(0)
+		random.seed(1001)
+		shuffle(self.trainData)
+		if n!=-1:
+			self.trainData = self.trainData[:n]
+
 		# print 'Loaded %s training samples' % len(self.trainData),'and %s testing samples'%  len(self.testData)
 	
 	def loadStopwords(self):
